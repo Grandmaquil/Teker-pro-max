@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Teker Pro Max</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon"/>
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+      background: url('./assets/background.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    #container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      gap: 60px;
+    }
+    #wheel-container {
+      position: relative;
+      width: 600px;
+      height: 600px;
+      cursor: pointer;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: transparent;
+      z-index: 1;
+    }
+    #pointer {
+      position: absolute;
+      top: 50%;
+      right: -35px;
+      transform: translateY(-50%) rotate(-180deg);
+      width: 0;
+      height: 0;
+      border-top: 25px solid transparent;
+      border-bottom: 25px solid transparent;
+      border-left: 35px solid red;
+      z-index: 10;
+    }
+    #history {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      max-height: 500px;
+      overflow-y: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    #history h3 { margin-top: 0; text-align:center; }
+    #popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    #popup-content {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 10px;
+      font-size: 24px;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+    #file-loader {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+
+<div id="file-loader">
+  <label>Names.txt Seç: <input type="file" id="fileInput" accept=".txt" /></label>
+</div>
+
+<div id="container">
+  <div id="wheel-container">
+    <canvas id="wheelCanvas" width="600" height="600"></canvas>
+    <div id="pointer" title="Pointer"></div>
+  </div>
+
+  <div id="history">
+    <h3>Son Seçilenler</h3>
+    <ul id="history-list"></ul>
+  </div>
+</div>
+
+<div id="popup">
+  <div id="popup-content">
+    <div id="popup-text">Seçilen: İSİM</div>
+    <button onclick="closePopup()">TAMAM</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const fileInput = document.getElementById('fileInput');
+const popup = document.getElementById('popup');
+const popupText = document.getElementById('popup-text');
+const historyList = document.getElementById('history-list');
+
+let names = [];
+let spinDuration = 5;
+let musicDuration = 15;
+let spinSoundVariants = 1;
+let isSpinning = false;
+let rotation = 0;
+const maxHistory = 10;
+
+let currentAudio = null;
+let soundTimeout = null;
+let spinSound = null;
+
+// Load wheel background
+const wheelImage = new Image();
+wheelImage.src = './assets/wheel.jpg';
+wheelImage.onload = () => drawWheel(rotation);
+
+// Load from localStorage if available
+function loadFromStorage() {
+  const stored = localStorage.getItem('wheelNamesData');
+  if (stored) {
+    try {
+      const obj = JSON.parse(stored);
+      if (obj.spinDuration != null) spinDuration = obj.spinDuration;
+      if (obj.musicDuration != null) musicDuration = obj.musicDuration;
+      if (obj.spinSoundVariants != null) spinSoundVariants = obj.spinSoundVariants;
+      if (Array.isArray(obj.names)) names = obj.names;
+      drawWheel(rotation);
+    } catch (e) { console.warn('Storage parse error', e); }
+  }
+}
+
+function saveToStorage() {
+  const obj = { spinDuration, musicDuration, spinSoundVariants, names };
+  try { localStorage.setItem('wheelNamesData', JSON.stringify(obj)); }
+  catch (e) { console.warn('Storage save error', e); }
+}
+
+loadFromStorage();
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  parseNamesText(text);
+  saveToStorage();
+});
+
+function parseNamesText(text) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return;
+  const firstParts = lines[0].split(',').map(s => s.trim());
+
+  if (firstParts.length >= 1 && !isNaN(parseFloat(firstParts[0])))
+    spinDuration = parseFloat(firstParts[0]);
+  if (firstParts.length >= 2 && !isNaN(parseFloat(firstParts[1])))
+    musicDuration = parseFloat(firstParts[1]);
+  if (firstParts.length >= 3 && !isNaN(parseInt(firstParts[2], 10)))
+    spinSoundVariants = parseInt(firstParts[2], 10);
+
+  const arr = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',').map(s => s.trim());
+    const name = parts[0];
+    const message = (parts.length >= 2 && parts[1] !== '') ? parts[1] : name;
+    let variants = 1;
+    if (parts.length >= 3 && !isNaN(parseInt(parts[2], 10))) {
+      variants = parseInt(parts[2], 10);
+      if (variants < 1) variants = 1;
+    }
+    arr.push({ name, message, variants });
+  }
+  names = arr;
+  drawWheel(rotation);
+}
+
+function drawWheel(angleDeg) {
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2;
+  const radius = Math.min(cx, cy);
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angleDeg * Math.PI / 180);
+  ctx.translate(-cx, -cy);
+
+  if (wheelImage.complete && wheelImage.naturalWidth !== 0)
+    ctx.drawImage(wheelImage, 0, 0, w, h);
+  else {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#f2f2f2';
+    ctx.fill();
+  }
+
+  if (!names || names.length === 0) {
+    ctx.restore();
+    return;
+  }
+
+  const segmentAngle = (2 * Math.PI) / names.length;
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'white';
+  for (let i = 0; i < names.length; i++) {
+    const start = i * segmentAngle;
+    const end = start + segmentAngle;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  for (let i = 0; i < names.length; i++) {
+    const start = i * segmentAngle;
+    const textAngle = start + segmentAngle / 2;
+    const textRadius = radius - 80;
+    const tx = cx + textRadius * Math.cos(textAngle);
+    const ty = cy + textRadius * Math.sin(textAngle);
+
+    ctx.save();
+    ctx.translate(tx, ty);
+    ctx.rotate(textAngle);
+    const arcLen = Math.max(20, textRadius * segmentAngle);
+    const fontSize = Math.max(14, Math.min(50, arcLen * 0.48));
+    ctx.font = `${Math.round(fontSize)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.12));
+    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeText(names[i].name, 0, 0);
+    ctx.fillText(names[i].name, 0, 0);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function showPopup(obj) {
+  popupText.textContent = `Seçilen: ${obj.message}`;
+  popup.style.display = 'flex';
+  const li = document.createElement('li');
+  li.textContent = obj.name;
+  historyList.prepend(li);
+  while (historyList.children.length > maxHistory)
+    historyList.removeChild(historyList.lastChild);
+}
+
+function closePopup() {
+  popup.style.display = 'none';
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+  if (soundTimeout) {
+    clearTimeout(soundTimeout);
+    soundTimeout = null;
+  }
+}
+
+// ✅ UPDATED FUNCTION
+function playStudentSound(nameObj) {
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
+
+  const baseName = nameObj.name;
+  const variants = nameObj.variants || 1;
+  let fileToPlay = '';
+
+  if (variants > 1) {
+    const choice = crypto.getRandomValues(new Uint32Array(1))[0] % variants + 1;
+    fileToPlay = `./sounds/${baseName}${choice}.mp3`;
+  } else {
+    fileToPlay = `./sounds/${baseName}.mp3`;
+  }
+
+  const audio = new Audio(fileToPlay);
+  currentAudio = audio;
+
+  audio.onerror = () => {
+    console.warn(`Custom music not found for ${baseName}, using Default.mp3`);
+    const fallback = new Audio('./sounds/Default.mp3');
+    fallback.onended = () => {
+      popup.style.display = 'none';
+    };
+    fallback.play().catch(err => console.error('Error playing Default.mp3:', err));
+    currentAudio = fallback;
+  };
+
+  audio.onended = () => {
+    popup.style.display = 'none';
+  };
+
+  audio.play().catch(err => {
+    console.error(`Error playing ${fileToPlay}:`, err);
+  });
+
+  soundTimeout = setTimeout(() => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+      popup.style.display = 'none';
+    }
+    soundTimeout = null;
+  }, musicDuration * 1000);
+}
+
+canvas.addEventListener('click', () => {
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
+
+  if (isSpinning || names.length === 0) return;
+  isSpinning = true;
+
+  // ✅ Use crypto-level randomness for fairness
+  const randomArr = new Uint32Array(1);
+  crypto.getRandomValues(randomArr);
+  const selectedIndex = randomArr[0] % names.length;
+  const selectedObj = names[selectedIndex];
+
+  const spins = Math.floor(Math.random() * 3) + 5;
+  const anglePerSegmentDeg = 360 / names.length;
+  const centerAngleDeg = (selectedIndex + 0.5) * anglePerSegmentDeg;
+  const currentRotMod = ((rotation % 360) + 360) % 360;
+  const needed = (360 - ((centerAngleDeg + currentRotMod) % 360)) % 360;
+  const totalRotation = spins * 360 + needed;
+
+  const startRot = rotation;
+  const endRot = startRot + totalRotation;
+  const startTime = performance.now();
+
+  let spinFile = 'sounds/Spin.mp3';
+  if (spinSoundVariants > 1) {
+    const choice = crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1;
+    spinFile = `./sounds/Spin${choice}.mp3`;
+  }
+  spinSound = new Audio(spinFile);
+  spinSound.loop = true;
+  spinSound.play().catch(() => {});
+
+  function animate(now) {
+    const elapsed = (now - startTime) / 1000;
+    const progress = Math.min(elapsed / spinDuration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    rotation = startRot + (endRot - startRot) * ease;
+    drawWheel(rotation);
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      rotation = endRot;
+      drawWheel(rotation);
+      spinSound.pause();
+      isSpinning = false;
+      showPopup(selectedObj);
+      playStudentSound(selectedObj);
+    }
+  }
+
+  requestAnimationFrame(animate);
+});
+
+drawWheel(rotation);
+</script>
+</body>
+</html>
