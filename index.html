@@ -35,8 +35,6 @@ html, body {
   padding: 20px;
 }
 
-/* ================= WHEEL STYLING ================= */
-
 #wheel-outer-ring {
   position: relative;
   padding: 15px;
@@ -87,8 +85,6 @@ canvas {
   border-right: 40px solid var(--accent);
 }
 
-/* ================= HISTORY BOX ================= */
-
 #history {
   background: var(--glass);
   backdrop-filter: blur(15px);
@@ -135,8 +131,6 @@ canvas {
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* ================= POPUP ================= */
-
 #popup {
   display: none;
   position: fixed;
@@ -178,10 +172,6 @@ canvas {
   color: white;
   transition: transform 0.2s;
 }
-
-#popup-content button:active { transform: scale(0.95); }
-
-/* ================= MOBILE ================= */
 
 @media (orientation: portrait), (max-width: 1000px) {
   html, body { overflow-y: auto; height: auto; }
@@ -278,13 +268,10 @@ wheelImage.onload = () => drawWheel(rotation);
 function showPopup(obj) {
   popupText.textContent = obj.message;
   popup.style.display = 'flex';
-
   const li = document.createElement('li');
   li.textContent = obj.name;
   historyList.prepend(li);
-
-  while (historyList.children.length > maxHistory)
-    historyList.removeChild(historyList.lastChild);
+  while (historyList.children.length > maxHistory) historyList.removeChild(historyList.lastChild);
 }
 
 function playStudentSound(nameObj) {
@@ -299,31 +286,22 @@ function playStudentSound(nameObj) {
 
   const audio = new Audio(fileToPlay);
   currentAudio = audio;
-
   audio.onerror = () => {
     const fallback = new Audio('./sounds/Default.mp3');
     fallback.onended = () => popup.style.display = 'none';
     fallback.play().catch(()=>{});
     currentAudio = fallback;
   };
-
   audio.onended = () => popup.style.display = 'none';
   audio.play().catch(()=>{});
-
   soundTimeout = setTimeout(() => {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-      currentAudio = null;
-      popup.style.display = 'none';
-    }
+    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; popup.style.display = 'none'; }
   }, musicDuration * 1000);
 }
 
 wheelContainer.addEventListener('pointerdown', (e) => {
   if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
-
   if (isSpinning) return;
   isSpinning = true;
 
@@ -357,10 +335,8 @@ wheelContainer.addEventListener('pointerdown', (e) => {
     const ease = 1 - Math.pow(1 - progress, 5);
     rotation = startRot + (endRot - startRot) * ease;
     drawWheel(rotation);
-
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else {
+    if (progress < 1) { requestAnimationFrame(animate); } 
+    else {
       rotation = endRot;
       drawWheel(rotation);
       spinSound.pause();
@@ -369,7 +345,6 @@ wheelContainer.addEventListener('pointerdown', (e) => {
       playStudentSound(selectedObj);
     }
   }
-
   requestAnimationFrame(animate);
 });
 
@@ -384,7 +359,6 @@ function drawWheel(angleDeg) {
   const cx = w/2, cy = h/2;
   const radius = Math.min(cx, cy);
   ctx.clearRect(0, 0, w, h);
-
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(angleDeg * Math.PI / 180);
@@ -394,11 +368,8 @@ function drawWheel(angleDeg) {
     ctx.drawImage(wheelImage, 0, 0, w, h);
 
   const segmentAngle = (2 * Math.PI) / names.length;
-
-  // INCREASED THICKNESS & OPACITY HERE
   ctx.strokeStyle = 'rgba(255,255,255,0.7)';
   ctx.lineWidth = 2;
-
   for (let i = 0; i < names.length; i++) {
     const start = i * segmentAngle;
     ctx.beginPath();
@@ -406,14 +377,12 @@ function drawWheel(angleDeg) {
     ctx.lineTo(cx + radius * Math.cos(start), cy + radius * Math.sin(start));
     ctx.stroke();
   }
-
   for (let i = 0; i < names.length; i++) {
     const start = i * segmentAngle;
     const textAngle = start + segmentAngle / 2;
     const textRadius = radius - 80;
     const tx = cx + textRadius * Math.cos(textAngle);
     const ty = cy + textRadius * Math.sin(textAngle);
-
     ctx.save();
     ctx.translate(tx, ty);
     ctx.rotate(textAngle);
@@ -432,6 +401,57 @@ function drawWheel(angleDeg) {
   ctx.restore();
 }
 
+// ================= ASSET VALIDATOR =================
+async function validateAssets() {
+  console.log("🔍 Checking assets...");
+  const missing = [];
+  const filesToCheck = [
+    './assets/background.jpg',
+    './assets/wheel.jpg',
+    './sounds/Default.mp3'
+  ];
+
+  // Add spin sounds to check list
+  if (spinSoundVariants <= 1) {
+    filesToCheck.push('./sounds/Spin.mp3');
+  } else {
+    for (let i = 1; i <= spinSoundVariants; i++) {
+      filesToCheck.push(`./sounds/Spin${i}.mp3`);
+    }
+  }
+
+  // Add name sounds to check list
+  names.forEach(n => {
+    if (!n.variants || n.variants <= 1) {
+      filesToCheck.push(`./sounds/${n.name}.mp3`);
+    } else {
+      for (let i = 1; i <= n.variants; i++) {
+        filesToCheck.push(`./sounds/${n.name}${i}.mp3`);
+      }
+    }
+  });
+
+  // Run the check
+  const checks = filesToCheck.map(async (url) => {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      if (!response.ok) missing.push(url);
+    } catch (e) {
+      missing.push(url + " (Fetch Error)");
+    }
+  });
+
+  await Promise.all(checks);
+
+  if (missing.length > 0) {
+    console.error("❌ MISSING FILES DETECTED:");
+    missing.forEach(file => console.warn("Missing:", file));
+  } else {
+    console.log("✅ All assets loaded correctly.");
+  }
+}
+
+validateAssets();
 drawWheel(rotation);
 </script>
 </body>
