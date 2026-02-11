@@ -28,6 +28,9 @@ html, body {
   width: 600px;
   height: 600px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 canvas {
@@ -86,7 +89,7 @@ canvas {
   background: white;
   padding: 40px 60px;
   border-radius: 16px;
-  font-size: 28px; /* slightly bigger for PC */
+  font-size: 28px;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0,0,0,0.4);
   max-width: 80%;
@@ -117,16 +120,24 @@ canvas {
 
 @media (orientation: portrait), (max-width: 900px) {
 
-  #container {
-    flex-direction: column;
-    gap: 20px;
-    padding-top: 20px;
-    height: auto;
+  html, body {
+    overflow-y: auto;
   }
 
+  #container {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 30px;
+    min-height: 100vh;
+    padding-top: 40px;
+  }
+
+  /* 🔥 PERFECT CENTERING */
   #wheel-container {
     width: 90vw;
     height: 90vw;
+    margin: 0 auto;
   }
 
   canvas {
@@ -143,8 +154,7 @@ canvas {
     max-height: 250px;
   }
 
-  /* 🔥 Bigger popup for mobile */
-
+  /* Bigger popup for mobile */
   #popup-content {
     font-size: 36px;
     padding: 50px 30px;
@@ -159,6 +169,7 @@ canvas {
 
 }
 </style>
+
 
 
 </head>
@@ -412,6 +423,7 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
+
 
 
 
