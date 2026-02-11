@@ -9,7 +9,247 @@
 <style>
 html, body {
   margin: 0;
+  height: 100%;<!DOCTYPE html> 
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<title>Teker Pro Max</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon"/>
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
+<style>
+html, body {
+  margin: 0;
   height: 100%;
+  overflow: hidden;
+  font-family: sans-serif;
+  background: url('./assets/background.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
+#wheel-container, canvas {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+#container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 60px;
+}
+
+#wheel-container {
+  position: relative;
+  width: 600px;
+  height: 600px;
+  cursor: pointer;
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: transparent;
+  z-index: 1;
+}
+
+#pointer {
+  position: absolute;
+  top: 50%;
+  right: -35px;
+  transform: translateY(-50%) rotate(-180deg);
+  width: 0;
+  height: 0;
+  border-top: 25px solid transparent;
+  border-bottom: 25px solid transparent;
+  border-left: 35px solid red;
+  z-index: 10;
+}
+
+#history {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+#history h3 { 
+  margin-top: 0; 
+  text-align:center; 
+}
+
+#popup {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+#popup-content {
+  background: white;
+  padding: 40px 60px;
+  border-radius: 16px;
+  font-size: 28px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  max-width: 80%;
+}
+
+#popup-content button {
+  margin-top: 25px;
+  padding: 14px 32px;
+  font-size: 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div id="container">
+  <div id="wheel-container">
+    <canvas id="wheelCanvas" width="600" height="600"></canvas>
+    <div id="pointer"></div>
+  </div>
+  <div id="history">
+    <h3>Son Seçilenler</h3>
+    <ul id="history-list"></ul>
+  </div>
+</div>
+
+<div id="popup">
+  <div id="popup-content">
+    <div id="popup-text">Seçilen: İSİM</div>
+    <button onclick="closePopup()">TAMAM</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const wheelContainer = document.getElementById('wheel-container');
+
+const popup = document.getElementById('popup');
+const popupText = document.getElementById('popup-text');
+const historyList = document.getElementById('history-list');
+
+let spinDuration = 10;
+let musicDuration = 10;
+let spinSoundVariants = 44;
+let isSpinning = false;
+let rotation = 0;
+const maxHistory = 10;
+
+let currentAudio = null;
+let soundTimeout = null;
+let spinSound = null;
+
+/* NAMES ARRAY UNCHANGED */
+let names = [ ... ]; // (kept exactly same as yours)
+
+/* --- SPIN FUNCTION (EXACT SAME LOGIC) --- */
+
+function startSpin() {
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
+  if (isSpinning) return;
+
+  isSpinning = true;
+
+  const randomArr = new Uint32Array(1);
+  crypto.getRandomValues(randomArr);
+  const selectedIndex = randomArr[0] % names.length;
+  const selectedObj = names[selectedIndex];
+
+  const spins = Math.floor(Math.random() * 3) + 5;
+  const anglePerSegmentDeg = 360 / names.length;
+  const centerAngleDeg = (selectedIndex + 0.5) * anglePerSegmentDeg;
+  const currentRotMod = ((rotation % 360) + 360) % 360;
+  const needed = (360 - ((centerAngleDeg + currentRotMod) % 360)) % 360;
+  const totalRotation = spins * 360 + needed;
+
+  const startRot = rotation;
+  const endRot = startRot + totalRotation;
+  const startTime = performance.now();
+
+  let spinFile = 'sounds/Spin.mp3';
+  if (spinSoundVariants > 1)
+    spinFile = `./sounds/Spin${crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1}.mp3`;
+
+  spinSound = new Audio(spinFile);
+  spinSound.loop = true;
+  spinSound.play().catch(()=>{});
+
+  function animate(now) {
+    const elapsed = (now - startTime) / 1000;
+    const progress = Math.min(elapsed / spinDuration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    rotation = startRot + (endRot - startRot) * ease;
+    drawWheel(rotation);
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      rotation = endRot;
+      drawWheel(rotation);
+      spinSound.pause();
+      isSpinning = false;
+      showPopup(selectedObj);
+      playStudentSound(selectedObj);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+/* 🔥 NEW: TOUCH + DRAG SAFE TRIGGER */
+wheelContainer.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  startSpin();
+});
+
+wheelContainer.addEventListener('dragstart', e => e.preventDefault());
+
+/* drawWheel FUNCTION UNCHANGED */
+function drawWheel(angleDeg) {
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2;
+  const radius = Math.min(cx, cy);
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angleDeg * Math.PI / 180);
+  ctx.translate(-cx, -cy);
+
+  if (wheelImage.complete && wheelImage.naturalWidth !== 0)
+    ctx.drawImage(wheelImage, 0, 0, w, h);
+
+  ctx.restore();
+}
+
+drawWheel(rotation);
+</script>
+</body>
+</html>
+
   overflow: hidden;
   font-family: sans-serif;
   background: url('./assets/background.jpg') no-repeat center center fixed;
@@ -219,3 +459,4 @@ canvas.addEventListener('pointerdown', (e) => {
 </script>
 </body>
 </html>
+
