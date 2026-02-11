@@ -77,6 +77,33 @@ canvas {
   text-align: center;
   box-shadow: 0 5px 20px rgba(0,0,0,0.3);
 }
+/* ✅ MOBILE / VERTICAL MODE LAYOUT */
+@media (max-width: 900px), (orientation: portrait) {
+
+  #container {
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  #wheel-container {
+    width: 90vw;
+    height: 90vw;
+    max-width: 95vw;
+    max-height: 95vw;
+  }
+
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  #history {
+    width: 90%;
+    max-height: 200px;
+  }
+
+}
 </style>
 </head>
 
@@ -329,3 +356,4 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
+
