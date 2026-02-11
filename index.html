@@ -14,6 +14,7 @@ html, body {
   background: url('./assets/background.jpg') no-repeat center center fixed;
   background-size: cover;
 }
+
 #container {
   display: flex;
   align-items: center;
@@ -21,12 +22,14 @@ html, body {
   height: 100vh;
   gap: 60px;
 }
+
 #wheel-container {
   position: relative;
   width: 600px;
   height: 600px;
   cursor: pointer;
 }
+
 canvas {
   position: absolute;
   top: 0;
@@ -37,6 +40,7 @@ canvas {
   background: transparent;
   z-index: 1;
 }
+
 #pointer {
   position: absolute;
   top: 50%;
@@ -49,6 +53,7 @@ canvas {
   border-left: 35px solid red;
   z-index: 10;
 }
+
 #history {
   background: rgba(255, 255, 255, 0.9);
   padding: 20px;
@@ -58,7 +63,12 @@ canvas {
   overflow-y: auto;
   box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
-#history h3 { margin-top: 0; text-align:center; }
+
+#history h3 { 
+  margin-top: 0; 
+  text-align:center; 
+}
+
 #popup {
   display: none;
   position: fixed;
@@ -69,6 +79,7 @@ canvas {
   align-items: center;
   z-index: 999;
 }
+
 #popup-content {
   background: white;
   padding: 30px 40px;
@@ -77,34 +88,39 @@ canvas {
   text-align: center;
   box-shadow: 0 5px 20px rgba(0,0,0,0.3);
 }
-/* ✅ MOBILE / VERTICAL MODE LAYOUT */
-@media (max-width: 900px), (orientation: portrait) {
+
+/* ✅ MOBILE / VERTICAL MODE */
+@media (orientation: portrait), (max-width: 900px) {
 
   #container {
     flex-direction: column;
     gap: 20px;
-    padding: 20px;
+    padding-top: 20px;
+    height: auto;
   }
 
   #wheel-container {
     width: 90vw;
     height: 90vw;
-    max-width: 95vw;
-    max-height: 95vw;
   }
 
   canvas {
-    width: 100% !important;
-    height: 100% !important;
+    width: 90vw;
+    height: 90vw;
+  }
+
+  #pointer {
+    right: -25px;
   }
 
   #history {
-    width: 90%;
-    max-height: 200px;
+    width: 90vw;
+    max-height: 250px;
   }
 
 }
 </style>
+
 </head>
 
 <body>
@@ -356,4 +372,5 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
+
 
