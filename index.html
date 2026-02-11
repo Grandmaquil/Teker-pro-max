@@ -69,6 +69,8 @@ canvas {
   text-align:center; 
 }
 
+/* ================= POPUP ================= */
+
 #popup {
   display: none;
   position: fixed;
@@ -82,41 +84,38 @@ canvas {
 
 #popup-content {
   background: white;
-  padding: 40px 60px; /* slightly bigger for PC */
-  border-radius: 15px;
-  font-size: 28px; /* bigger text */
+  padding: 40px 60px;
+  border-radius: 16px;
+  font-size: 28px; /* slightly bigger for PC */
   text-align: center;
-  box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  max-width: 80%;
 }
 
 #popup-content button {
   margin-top: 25px;
-  padding: 14px 35px;
+  padding: 14px 32px;
   font-size: 20px;
   border-radius: 10px;
   border: none;
-  background: #4CAF50;
-  color: white;
   cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  transition: transform 0.1s ease, background-color 0.2s ease;
 }
 
 #popup-content button:hover {
-  background: #45a049;
+  background-color: #45a049;
+  transform: scale(1.05);
 }
 
-/* ✅ MOBILE / VERTICAL MODE */
-@media (orientation: portrait), (max-width: 900px) {
-    #popup-content {
-    padding: 50px 30px;
-    font-size: 32px;
-    width: 85vw;
-  }
+#popup-content button:active {
+  transform: scale(0.97);
+}
 
-  #popup-content button {
-    width: 100%;
-    padding: 20px;
-    font-size: 24px;
-  }
+/* ================= MOBILE / VERTICAL ================= */
+
+@media (orientation: portrait), (max-width: 900px) {
 
   #container {
     flex-direction: column;
@@ -144,8 +143,23 @@ canvas {
     max-height: 250px;
   }
 
+  /* 🔥 Bigger popup for mobile */
+
+  #popup-content {
+    font-size: 36px;
+    padding: 50px 30px;
+    border-radius: 20px;
+  }
+
+  #popup-content button {
+    font-size: 26px;
+    padding: 20px 50px;
+    border-radius: 14px;
+  }
+
 }
 </style>
+
 
 </head>
 
@@ -398,6 +412,7 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
+
 
 
 
