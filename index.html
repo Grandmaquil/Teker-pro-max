@@ -1,105 +1,3 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8" />
-<title>Teker Pro Max</title>
-<link rel="icon" href="favicon.ico" type="image/x-icon"/>
-<link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
-<style>
-html, body {
-  margin: 0;
-  height: 100%;
-  overflow: hidden;
-  font-family: sans-serif;
-  background: url('./assets/background.jpg') no-repeat center center fixed;
-  background-size: cover;
-}
-#container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 60px;
-}
-#wheel-container {
-  position: relative;
-  width: 600px;
-  height: 600px;
-  cursor: pointer;
-}
-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: transparent;
-  z-index: 1;
-}
-#pointer {
-  position: absolute;
-  top: 50%;
-  right: -35px;
-  transform: translateY(-50%) rotate(-180deg);
-  width: 0;
-  height: 0;
-  border-top: 25px solid transparent;
-  border-bottom: 25px solid transparent;
-  border-left: 35px solid red;
-  z-index: 10;
-}
-#history {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-  max-height: 500px;
-  overflow-y: auto;
-  box-shadow: 0 0 10px rgba(0,0,0,0.3);
-}
-#history h3 { margin-top: 0; text-align:center; }
-#popup {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-#popup-content {
-  background: white;
-  padding: 30px 40px;
-  border-radius: 10px;
-  font-size: 24px;
-  text-align: center;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-}
-</style>
-</head>
-
-<body>
-
-<div id="container">
-  <div id="wheel-container">
-    <canvas id="wheelCanvas" width="600" height="600"></canvas>
-    <div id="pointer" title="Pointer"></div>
-  </div>
-  <div id="history">
-    <h3>Son Seçilenler</h3>
-    <ul id="history-list"></ul>
-  </div>
-</div>
-
-<div id="popup">
-  <div id="popup-content">
-    <div id="popup-text">Seçilen: İSİM</div>
-    <button onclick="closePopup()">TAMAM</button>
-  </div>
-</div>
-
 <script>
 const canvas = document.getElementById('wheelCanvas');
 const ctx = canvas.getContext('2d');
@@ -157,8 +55,35 @@ const wheelImage = new Image();
 wheelImage.src = './assets/wheel.jpg';
 wheelImage.onload = () => drawWheel(rotation);
 
-/* SOUND SYSTEM RESTORED EXACTLY */
+/* HISTORY + POPUP */
+function showPopup(obj) {
+  popupText.textContent = `Seçilen: ${obj.message}`;
+  popup.style.display = 'flex';
 
+  const li = document.createElement('li');
+  li.textContent = obj.name;
+  historyList.prepend(li);
+
+  while (historyList.children.length > maxHistory)
+    historyList.removeChild(historyList.lastChild);
+}
+
+function closePopup() {
+  popup.style.display = 'none';
+
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+
+  if (soundTimeout) {
+    clearTimeout(soundTimeout);
+    soundTimeout = null;
+  }
+}
+
+/* SOUND SYSTEM */
 function playStudentSound(nameObj) {
   if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
@@ -184,7 +109,9 @@ function playStudentSound(nameObj) {
     currentAudio = fallback;
   };
 
-  audio.onended = () => { popup.style.display = 'none'; };
+  audio.onended = () => {
+    popup.style.display = 'none';
+  };
 
   audio.play().catch(()=>{});
 
@@ -199,13 +126,13 @@ function playStudentSound(nameObj) {
   }, musicDuration * 1000);
 }
 
-/* Spin system untouched */
-
+/* SPIN SYSTEM (UNCHANGED) */
 canvas.addEventListener('click', () => {
+
   if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
 
-  if (isSpinning) return;
+  if (isSpinning || names.length === 0) return;
   isSpinning = true;
 
   const randomArr = new Uint32Array(1);
@@ -238,6 +165,7 @@ canvas.addEventListener('click', () => {
     const elapsed = (now - startTime) / 1000;
     const progress = Math.min(elapsed / spinDuration, 1);
     const ease = 1 - Math.pow(1 - progress, 3);
+
     rotation = startRot + (endRot - startRot) * ease;
     drawWheel(rotation);
 
@@ -249,9 +177,7 @@ canvas.addEventListener('click', () => {
       spinSound.pause();
       isSpinning = false;
 
-      popupText.textContent = `Seçilen: ${selectedObj.message}`;
-      popup.style.display = 'flex';
-
+      showPopup(selectedObj);
       playStudentSound(selectedObj);
     }
   }
@@ -259,19 +185,7 @@ canvas.addEventListener('click', () => {
   requestAnimationFrame(animate);
 });
 
-function closePopup() {
-  popup.style.display = 'none';
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.currentTime = 0;
-    currentAudio = null;
-  }
-  if (soundTimeout) {
-    clearTimeout(soundTimeout);
-    soundTimeout = null;
-  }
-}
-
+/* DRAW */
 function drawWheel(angleDeg) {
   const w = canvas.width, h = canvas.height;
   const cx = w/2, cy = h/2;
@@ -310,16 +224,20 @@ function drawWheel(angleDeg) {
     ctx.save();
     ctx.translate(tx, ty);
     ctx.rotate(textAngle);
+
     const arcLen = Math.max(20, textRadius * segmentAngle);
     const fontSize = Math.max(14, Math.min(50, arcLen * 0.48));
+
     ctx.font = `${Math.round(fontSize)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.12));
     ctx.strokeStyle = 'rgba(0,0,0,0.9)';
     ctx.fillStyle = '#ffffff';
+
     ctx.strokeText(names[i].name, 0, 0);
     ctx.fillText(names[i].name, 0, 0);
+
     ctx.restore();
   }
 
@@ -327,6 +245,4 @@ function drawWheel(angleDeg) {
 }
 
 drawWheel(rotation);
-</script>
-</body>
-</html>
+  </script>
