@@ -82,15 +82,41 @@ canvas {
 
 #popup-content {
   background: white;
-  padding: 30px 40px;
-  border-radius: 10px;
-  font-size: 24px;
+  padding: 40px 60px; /* slightly bigger for PC */
+  border-radius: 15px;
+  font-size: 28px; /* bigger text */
   text-align: center;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+}
+
+#popup-content button {
+  margin-top: 25px;
+  padding: 14px 35px;
+  font-size: 20px;
+  border-radius: 10px;
+  border: none;
+  background: #4CAF50;
+  color: white;
+  cursor: pointer;
+}
+
+#popup-content button:hover {
+  background: #45a049;
 }
 
 /* ✅ MOBILE / VERTICAL MODE */
 @media (orientation: portrait), (max-width: 900px) {
+    #popup-content {
+    padding: 50px 30px;
+    font-size: 32px;
+    width: 85vw;
+  }
+
+  #popup-content button {
+    width: 100%;
+    padding: 20px;
+    font-size: 24px;
+  }
 
   #container {
     flex-direction: column;
@@ -372,5 +398,6 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
+
 
 
