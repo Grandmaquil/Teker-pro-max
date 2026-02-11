@@ -28,9 +28,6 @@ html, body {
   width: 600px;
   height: 600px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 canvas {
@@ -104,40 +101,28 @@ canvas {
   cursor: pointer;
   background-color: #4CAF50;
   color: white;
-  transition: transform 0.1s ease, background-color 0.2s ease;
 }
 
-#popup-content button:hover {
-  background-color: #45a049;
-  transform: scale(1.05);
-}
-
-#popup-content button:active {
-  transform: scale(0.97);
-}
-
-/* ================= MOBILE / VERTICAL ================= */
+/* ================= MOBILE (VERTICAL CENTERED WHEEL) ================= */
 
 @media (orientation: portrait), (max-width: 900px) {
 
   html, body {
     overflow-y: auto;
+    height: 100%;
   }
 
   #container {
     flex-direction: column;
-    justify-content: flex-start;
     align-items: center;
+    justify-content: center;   /* 🔥 THIS vertically centers */
+    height: 100vh;
     gap: 30px;
-    min-height: 100vh;
-    padding-top: 40px;
   }
 
-  /* 🔥 PERFECT CENTERING */
   #wheel-container {
     width: 90vw;
     height: 90vw;
-    margin: 0 auto;
   }
 
   canvas {
@@ -151,7 +136,7 @@ canvas {
 
   #history {
     width: 90vw;
-    max-height: 250px;
+    max-height: 200px;
   }
 
   /* Bigger popup for mobile */
@@ -169,6 +154,7 @@ canvas {
 
 }
 </style>
+
 
 </head>
 
@@ -421,6 +407,7 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
+
 
 
 
