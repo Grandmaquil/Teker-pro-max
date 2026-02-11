@@ -5,17 +5,6 @@
 <title>Teker Pro Max</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon"/>
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
-
-<style>
-html, body {
-  margin: 0;
-  height: 100%;<!DOCTYPE html> 
-<html lang="tr">
-<head>
-<meta charset="UTF-8" />
-<title>Teker Pro Max</title>
-<link rel="icon" href="favicon.ico" type="image/x-icon"/>
-<link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
 <style>
 html, body {
   margin: 0;
@@ -24,13 +13,6 @@ html, body {
   font-family: sans-serif;
   background: url('./assets/background.jpg') no-repeat center center fixed;
   background-size: cover;
-}
-
-#wheel-container, canvas {
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
 }
 
 #container {
@@ -46,6 +28,11 @@ html, body {
   width: 600px;
   height: 600px;
   cursor: pointer;
+  /* Prevent blue highlight and browser interference */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none; 
 }
 
 canvas {
@@ -57,6 +44,7 @@ canvas {
   border-radius: 50%;
   background: transparent;
   z-index: 1;
+  pointer-events: none; /* Let the container handle the touch */
 }
 
 #pointer {
@@ -86,6 +74,8 @@ canvas {
   margin-top: 0; 
   text-align:center; 
 }
+
+/* ================= POPUP ================= */
 
 #popup {
   display: none;
@@ -118,15 +108,65 @@ canvas {
   background-color: #4CAF50;
   color: white;
 }
+
+/* ================= MOBILE (VERTICAL CENTERED WHEEL) ================= */
+
+@media (orientation: portrait), (max-width: 900px) {
+
+  html, body {
+    overflow-y: auto;
+    height: 100%;
+  }
+
+  #container {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;   
+    height: 100vh;
+    gap: 30px;
+  }
+
+  #wheel-container {
+    width: 90vw;
+    height: 90vw;
+  }
+
+  canvas {
+    width: 90vw;
+    height: 90vw;
+  }
+
+  #pointer {
+    right: -25px;
+  }
+
+  #history {
+    width: 90vw;
+    max-height: 200px;
+  }
+
+  #popup-content {
+    font-size: 36px;
+    padding: 50px 30px;
+    border-radius: 20px;
+  }
+
+  #popup-content button {
+    font-size: 26px;
+    padding: 20px 50px;
+    border-radius: 14px;
+  }
+
+}
 </style>
 </head>
 
 <body>
 
 <div id="container">
-  <div id="wheel-container">
+  <div id="wheel-container" id="wheelTrigger">
     <canvas id="wheelCanvas" width="600" height="600"></canvas>
-    <div id="pointer"></div>
+    <div id="pointer" title="Pointer"></div>
   </div>
   <div id="history">
     <h3>Son Seçilenler</h3>
@@ -143,9 +183,8 @@ canvas {
 
 <script>
 const canvas = document.getElementById('wheelCanvas');
-const ctx = canvas.getContext('2d');
 const wheelContainer = document.getElementById('wheel-container');
-
+const ctx = canvas.getContext('2d');
 const popup = document.getElementById('popup');
 const popupText = document.getElementById('popup-text');
 const historyList = document.getElementById('history-list');
@@ -161,16 +200,95 @@ let currentAudio = null;
 let soundTimeout = null;
 let spinSound = null;
 
-/* NAMES ARRAY UNCHANGED */
-let names = [ ... ]; // (kept exactly same as yours)
+let names = [
+{ name:"55 Dağaşan", message:"55 Dağaşan", variants:1 },
+{ name:"121 Çam", message:"121 Çam", variants:1 },
+{ name:"122 Korucuoğlu", message:"122 Korucuoğlu", variants:1 },
+{ name:"123 Avşar", message:"123 Avşar", variants:1 },
+{ name:"124 Kaya", message:"124 Kaya", variants:2 },
+{ name:"125 Mutlu", message:"125 Mutlu", variants:1 },
+{ name:"126 Güçlü", message:"126 Güçlü", variants:1 },
+{ name:"127 Zengin", message:"127 Zengin", variants:2 },
+{ name:"128 Işık", message:"128 Işık", variants:1 },
+{ name:"129 Ağlık", message:"129 Ağlık", variants:1 },
+{ name:"130 Dinçoğlu", message:"130 Dinçoğlu", variants:1 },
+{ name:"131 Camcıoğlu", message:"131 Camcıoğlu", variants:1 },
+{ name:"132 Camadan", message:"132 Camadan", variants:5 },
+{ name:"133 Moroğlu", message:"133 Moroğlu", variants:1 },
+{ name:"134 Tüfekçi", message:"134 Tüfekçi", variants:1 },
+{ name:"135 Başarır", message:"135 Başarır", variants:1 },
+{ name:"136 Karadoğan", message:"136 Karadoğan", variants:1 },
+{ name:"137 Soylu", message:"137 Soylu", variants:1 },
+{ name:"138 Esen", message:"138 Esen", variants:3 },
+{ name:"139 Aykut", message:"139 Aykut", variants:1 },
+{ name:"140 Yazıcı", message:"140 Yazıcı", variants:1 },
+{ name:"141 Demir", message:"141 Demir", variants:1 },
+{ name:"142 Bıçakçı", message:"142 Bıçakçı", variants:1 },
+{ name:"143 Yaman", message:"143 Yaman", variants:1 },
+{ name:"144 Bedir", message:"144 Bedir", variants:1 },
+{ name:"145 Ayaz", message:"145 Ayaz", variants:1 },
+{ name:"146 Kara", message:"146 Kara", variants:1 },
+{ name:"147 Narin", message:"147 Narin", variants:1 },
+{ name:"148 Uşun", message:"148 Uşun", variants:1 },
+{ name:"149 Taran", message:"149 Taran", variants:1 },
+{ name:"150 Gül", message:"150 Gül", variants:1 }
+];
 
-/* --- SPIN FUNCTION (EXACT SAME LOGIC) --- */
+const wheelImage = new Image();
+wheelImage.src = './assets/wheel.jpg';
+wheelImage.onload = () => drawWheel(rotation);
 
-function startSpin() {
+function showPopup(obj) {
+  popupText.textContent = `Seçilen: ${obj.message}`;
+  popup.style.display = 'flex';
+
+  const li = document.createElement('li');
+  li.textContent = obj.name;
+  historyList.prepend(li);
+
+  while (historyList.children.length > maxHistory)
+    historyList.removeChild(historyList.lastChild);
+}
+
+function playStudentSound(nameObj) {
   if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
-  if (isSpinning) return;
 
+  const baseName = nameObj.name;
+  const variants = nameObj.variants || 1;
+  let fileToPlay = variants > 1
+    ? `./sounds/${baseName}${crypto.getRandomValues(new Uint32Array(1))[0] % variants + 1}.mp3`
+    : `./sounds/${baseName}.mp3`;
+
+  const audio = new Audio(fileToPlay);
+  currentAudio = audio;
+
+  audio.onerror = () => {
+    const fallback = new Audio('./sounds/Default.mp3');
+    fallback.onended = () => popup.style.display = 'none';
+    fallback.play().catch(()=>{});
+    currentAudio = fallback;
+  };
+
+  audio.onended = () => popup.style.display = 'none';
+  audio.play().catch(()=>{});
+
+  soundTimeout = setTimeout(() => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+      popup.style.display = 'none';
+    }
+  }, musicDuration * 1000);
+}
+
+// Changed to pointerdown to trigger immediately on touch or click, even if dragged
+wheelContainer.addEventListener('pointerdown', (e) => {
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
+
+  if (isSpinning) return;
   isSpinning = true;
 
   const randomArr = new Uint32Array(1);
@@ -217,17 +335,21 @@ function startSpin() {
   }
 
   requestAnimationFrame(animate);
-}
-
-/* 🔥 NEW: TOUCH + DRAG SAFE TRIGGER */
-wheelContainer.addEventListener('pointerdown', (e) => {
-  e.preventDefault();
-  startSpin();
 });
 
-wheelContainer.addEventListener('dragstart', e => e.preventDefault());
+function closePopup() {
+  popup.style.display = 'none';
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+  if (soundTimeout) {
+    clearTimeout(soundTimeout);
+    soundTimeout = null;
+  }
+}
 
-/* drawWheel FUNCTION UNCHANGED */
 function drawWheel(angleDeg) {
   const w = canvas.width, h = canvas.height;
   const cx = w/2, cy = h/2;
@@ -242,6 +364,43 @@ function drawWheel(angleDeg) {
   if (wheelImage.complete && wheelImage.naturalWidth !== 0)
     ctx.drawImage(wheelImage, 0, 0, w, h);
 
+  const segmentAngle = (2 * Math.PI) / names.length;
+
+  for (let i = 0; i < names.length; i++) {
+    const start = i * segmentAngle;
+    const end = start + segmentAngle;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  for (let i = 0; i < names.length; i++) {
+    const start = i * segmentAngle;
+    const textAngle = start + segmentAngle / 2;
+    const textRadius = radius - 80;
+    const tx = cx + textRadius * Math.cos(textAngle);
+    const ty = cy + textRadius * Math.sin(textAngle);
+
+    ctx.save();
+    ctx.translate(tx, ty);
+    ctx.rotate(textAngle);
+    const arcLen = Math.max(20, textRadius * segmentAngle);
+    const fontSize = Math.max(14, Math.min(50, arcLen * 0.48));
+    ctx.font = `${Math.round(fontSize)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.12));
+    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeText(names[i].name, 0, 0);
+    ctx.fillText(names[i].name, 0, 0);
+    ctx.restore();
+  }
+
   ctx.restore();
 }
 
@@ -249,214 +408,3 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
-
-  overflow: hidden;
-  font-family: sans-serif;
-  background: url('./assets/background.jpg') no-repeat center center fixed;
-  background-size: cover;
-}
-
-#container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 60px;
-}
-
-#wheel-container {
-  position: relative;
-  width: 600px;
-  height: 600px;
-  cursor: pointer;
-}
-
-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: transparent;
-  z-index: 1;
-
-  /* ✅ Prevent blue highlight + drag issues */
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  touch-action: manipulation;
-  outline: none;
-}
-
-canvas:focus {
-  outline: none;
-}
-
-#pointer {
-  position: absolute;
-  top: 50%;
-  right: -35px;
-  transform: translateY(-50%) rotate(-180deg);
-  width: 0;
-  height: 0;
-  border-top: 25px solid transparent;
-  border-bottom: 25px solid transparent;
-  border-left: 35px solid red;
-  z-index: 10;
-}
-
-#history {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-  max-height: 500px;
-  overflow-y: auto;
-  box-shadow: 0 0 10px rgba(0,0,0,0.3);
-}
-
-#history h3 { 
-  margin-top: 0; 
-  text-align:center; 
-}
-
-/* Popup unchanged */
-#popup {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-#popup-content {
-  background: white;
-  padding: 40px 60px;
-  border-radius: 16px;
-  font-size: 28px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-  max-width: 80%;
-}
-
-#popup-content button {
-  margin-top: 25px;
-  padding: 14px 32px;
-  font-size: 20px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  background-color: #4CAF50;
-  color: white;
-}
-</style>
-</head>
-
-<body>
-
-<div id="container">
-  <div id="wheel-container">
-    <canvas id="wheelCanvas" width="600" height="600"></canvas>
-    <div id="pointer"></div>
-  </div>
-  <div id="history">
-    <h3>Son Seçilenler</h3>
-    <ul id="history-list"></ul>
-  </div>
-</div>
-
-<div id="popup">
-  <div id="popup-content">
-    <div id="popup-text">Seçilen: İSİM</div>
-    <button onclick="closePopup()">TAMAM</button>
-  </div>
-</div>
-
-<script>
-const canvas = document.getElementById('wheelCanvas');
-const ctx = canvas.getContext('2d');
-const popup = document.getElementById('popup');
-const popupText = document.getElementById('popup-text');
-const historyList = document.getElementById('history-list');
-
-let spinDuration = 10;
-let musicDuration = 10;
-let spinSoundVariants = 44;
-let isSpinning = false;
-let rotation = 0;
-const maxHistory = 10;
-
-let currentAudio = null;
-let soundTimeout = null;
-let spinSound = null;
-
-/* --- NAMES ARRAY UNCHANGED --- */
-let names = [ /* unchanged for brevity but keep yours exactly */ ];
-
-/* ---------------- SPIN TRIGGER UPDATED ---------------- */
-
-canvas.addEventListener('pointerdown', (e) => {
-
-  e.preventDefault(); // prevents drag/select behavior
-
-  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
-  if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
-
-  if (isSpinning) return;
-  isSpinning = true;
-
-  const randomArr = new Uint32Array(1);
-  crypto.getRandomValues(randomArr);
-  const selectedIndex = randomArr[0] % names.length;
-  const selectedObj = names[selectedIndex];
-
-  const spins = Math.floor(Math.random() * 3) + 5;
-  const anglePerSegmentDeg = 360 / names.length;
-  const centerAngleDeg = (selectedIndex + 0.5) * anglePerSegmentDeg;
-  const currentRotMod = ((rotation % 360) + 360) % 360;
-  const needed = (360 - ((centerAngleDeg + currentRotMod) % 360)) % 360;
-  const totalRotation = spins * 360 + needed;
-
-  const startRot = rotation;
-  const endRot = startRot + totalRotation;
-  const startTime = performance.now();
-
-  let spinFile = 'sounds/Spin.mp3';
-  if (spinSoundVariants > 1)
-    spinFile = `./sounds/Spin${crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1}.mp3`;
-
-  spinSound = new Audio(spinFile);
-  spinSound.loop = true;
-  spinSound.play().catch(()=>{});
-
-  function animate(now) {
-    const elapsed = (now - startTime) / 1000;
-    const progress = Math.min(elapsed / spinDuration, 1);
-    const ease = 1 - Math.pow(1 - progress, 3);
-    rotation = startRot + (endRot - startRot) * ease;
-    drawWheel(rotation);
-
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else {
-      rotation = endRot;
-      drawWheel(rotation);
-      spinSound.pause();
-      isSpinning = false;
-      showPopup(selectedObj);
-      playStudentSound(selectedObj);
-    }
-  }
-
-  requestAnimationFrame(animate);
-});
-
-/* -------- EVERYTHING ELSE BELOW REMAINS EXACTLY SAME -------- */
-</script>
-</body>
-</html>
-
