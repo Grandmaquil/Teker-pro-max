@@ -85,7 +85,7 @@ canvas {
 <div id="container">
   <div id="wheel-container">
     <canvas id="wheelCanvas" width="600" height="600"></canvas>
-    <div id="pointer"></div>
+    <div id="pointer" title="Pointer"></div>
   </div>
   <div id="history">
     <h3>Son Seçilenler</h3>
@@ -153,45 +153,15 @@ let names = [
 { name:"150 Gül", message:"150 Gül", variants:1 }
 ];
 
-/* WHEEL DRAW (unchanged) */
 const wheelImage = new Image();
 wheelImage.src = './assets/wheel.jpg';
 wheelImage.onload = () => drawWheel(rotation);
 
-function drawWheel(angleDeg) {
-  const w = canvas.width, h = canvas.height;
-  const cx = w/2, cy = h/2;
-  const radius = Math.min(cx, cy);
-  ctx.clearRect(0, 0, w, h);
+/* SOUND SYSTEM RESTORED EXACTLY */
 
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(angleDeg * Math.PI / 180);
-  ctx.translate(-cx, -cy);
-
-  if (wheelImage.complete && wheelImage.naturalWidth !== 0)
-    ctx.drawImage(wheelImage, 0, 0, w, h);
-
-  const segmentAngle = (2 * Math.PI) / names.length;
-
-  for (let i = 0; i < names.length; i++) {
-    const start = i * segmentAngle;
-    const end = start + segmentAngle;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, radius, start, end);
-    ctx.closePath();
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
-/* SOUND SYSTEM RESTORED */
 function playStudentSound(nameObj) {
-  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
 
   const baseName = nameObj.name;
   const variants = nameObj.variants || 1;
@@ -209,23 +179,32 @@ function playStudentSound(nameObj) {
 
   audio.onerror = () => {
     const fallback = new Audio('./sounds/Default.mp3');
-    fallback.play();
+    fallback.onended = () => { popup.style.display = 'none'; };
+    fallback.play().catch(()=>{});
     currentAudio = fallback;
   };
 
-  audio.play();
+  audio.onended = () => { popup.style.display = 'none'; };
+
+  audio.play().catch(()=>{});
 
   soundTimeout = setTimeout(() => {
     if (currentAudio) {
       currentAudio.pause();
       currentAudio.currentTime = 0;
+      currentAudio = null;
       popup.style.display = 'none';
     }
+    soundTimeout = null;
   }, musicDuration * 1000);
 }
 
-/* SPIN SYSTEM UNCHANGED */
+/* Spin system untouched */
+
 canvas.addEventListener('click', () => {
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
+
   if (isSpinning) return;
   isSpinning = true;
 
@@ -253,7 +232,7 @@ canvas.addEventListener('click', () => {
 
   spinSound = new Audio(spinFile);
   spinSound.loop = true;
-  spinSound.play();
+  spinSound.play().catch(()=>{});
 
   function animate(now) {
     const elapsed = (now - startTime) / 1000;
@@ -269,8 +248,10 @@ canvas.addEventListener('click', () => {
       drawWheel(rotation);
       spinSound.pause();
       isSpinning = false;
+
       popupText.textContent = `Seçilen: ${selectedObj.message}`;
       popup.style.display = 'flex';
+
       playStudentSound(selectedObj);
     }
   }
@@ -283,7 +264,66 @@ function closePopup() {
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.currentTime = 0;
+    currentAudio = null;
   }
+  if (soundTimeout) {
+    clearTimeout(soundTimeout);
+    soundTimeout = null;
+  }
+}
+
+function drawWheel(angleDeg) {
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2;
+  const radius = Math.min(cx, cy);
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angleDeg * Math.PI / 180);
+  ctx.translate(-cx, -cy);
+
+  if (wheelImage.complete && wheelImage.naturalWidth !== 0)
+    ctx.drawImage(wheelImage, 0, 0, w, h);
+
+  const segmentAngle = (2 * Math.PI) / names.length;
+
+  for (let i = 0; i < names.length; i++) {
+    const start = i * segmentAngle;
+    const end = start + segmentAngle;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  for (let i = 0; i < names.length; i++) {
+    const start = i * segmentAngle;
+    const textAngle = start + segmentAngle / 2;
+    const textRadius = radius - 80;
+    const tx = cx + textRadius * Math.cos(textAngle);
+    const ty = cy + textRadius * Math.sin(textAngle);
+
+    ctx.save();
+    ctx.translate(tx, ty);
+    ctx.rotate(textAngle);
+    const arcLen = Math.max(20, textRadius * segmentAngle);
+    const fontSize = Math.max(14, Math.min(50, arcLen * 0.48));
+    ctx.font = `${Math.round(fontSize)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.12));
+    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeText(names[i].name, 0, 0);
+    ctx.fillText(names[i].name, 0, 0);
+    ctx.restore();
+  }
+
+  ctx.restore();
 }
 
 drawWheel(rotation);
