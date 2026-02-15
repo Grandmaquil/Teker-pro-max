@@ -52,7 +52,6 @@ html, body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: none; 
 }
 
 canvas {
@@ -126,6 +125,27 @@ canvas {
   animation: slideIn 0.3s ease-out;
 }
 
+/* Mobile Audio Unlock Overlay */
+#audio-unlocker {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  text-align: center;
+}
+#audio-unlocker p {
+    background: var(--primary);
+    padding: 20px 40px;
+    border-radius: 50px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(10px); }
   to { opacity: 1; transform: translateX(0); }
@@ -186,6 +206,10 @@ canvas {
 
 <body>
 
+<div id="audio-unlocker">
+    <p>BAŞLATMAK İÇİN DOKUNUN</p>
+</div>
+
 <div id="container">
   <div id="wheel-outer-ring">
     <div id="wheel-container">
@@ -215,6 +239,7 @@ const ctx = canvas.getContext('2d');
 const popup = document.getElementById('popup');
 const popupText = document.getElementById('popup-text');
 const historyList = document.getElementById('history-list');
+const audioUnlocker = document.getElementById('audio-unlocker');
 
 let spinDuration = 10;
 let musicDuration = 10;
@@ -223,62 +248,58 @@ let isSpinning = false;
 let rotation = 0;
 const maxHistory = 10;
 
-// --- FIXED AUDIO INITIALIZATION ---
-let currentAudio = new Audio(); 
+// PRE-CREATE AUDIO OBJECTS (This is key for mobile)
 let spinSound = new Audio();
+let resultSound = new Audio();
 let soundTimeout = null;
 let audioUnlocked = false;
 
-// Function to "unlock" audio for mobile browsers
+// Function to unlock audio context on first tap
 function unlockAudio() {
-  if (audioUnlocked) return;
-  
-  // Play and immediately pause to "warm up" the audio engine
-  spinSound.play().then(() => { spinSound.pause(); }).catch(() => {});
-  currentAudio.play().then(() => { currentAudio.pause(); }).catch(() => {});
-  
-  audioUnlocked = true;
-  window.removeEventListener('touchstart', unlockAudio);
-  window.removeEventListener('mousedown', unlockAudio);
+    if (audioUnlocked) return;
+    
+    // Play/Pause both sounds immediately to "bless" them
+    spinSound.play().then(() => spinSound.pause()).catch(e => console.log(e));
+    resultSound.play().then(() => resultSound.pause()).catch(e => console.log(e));
+    
+    audioUnlocked = true;
+    audioUnlocker.style.display = 'none';
 }
 
-// Listen for the very first interaction to unlock audio
-window.addEventListener('touchstart', unlockAudio);
-window.addEventListener('mousedown', unlockAudio);
-// -----------------------------------
+audioUnlocker.addEventListener('click', unlockAudio);
 
 let names = [
-    { name:"55 Dağaşan", message:"55 Dağaşan", variants:1 },
-    { name:"121 Çam", message:"121 Çam", variants:1 },
-    { name:"122 Korucuoğlu", message:"122 Korucuoğlu", variants:1 },
-    { name:"123 Avşar", message:"123 Avşar", variants:1 },
-    { name:"124 Kaya", message:"124 Kaya", variants:2 },
-    { name:"125 Mutlu", message:"125 Mutlu", variants:1 },
-    { name:"126 Güçlü", message:"126 Güçlü", variants:1 },
-    { name:"127 Zengin", message:"127 Zengin", variants:2 },
-    { name:"128 Işık", message:"128 Işık", variants:1 },
-    { name:"129 Ağlık", message:"129 Ağlık", variants:1 },
-    { name:"130 Dinçoğlu", message:"130 Dinçoğlu", variants:1 },
-    { name:"131 Camcıoğlu", message:"131 Camcıoğlu", variants:1 },
-    { name:"132 Camadan", message:"132 Camadan", variants:5 },
-    { name:"133 Moroğlu", message:"133 Moroğlu", variants:1 },
-    { name:"134 Tüfekçi", message:"134 Tüfekçi", variants:1 },
-    { name:"135 Başarır", message:"135 Başarır", variants:1 },
-    { name:"136 Karadoğan", message:"136 Karadoğan", variants:1 },
-    { name:"137 Soylu", message:"137 Soylu", variants:1 },
-    { name:"138 Esen", message:"138 Esen", variants:3 },
-    { name:"139 Aykut", message:"139 Aykut", variants:1 },
-    { name:"140 Yazıcı", message:"140 Yazıcı", variants:1 },
-    { name:"141 Demir", message:"141 Demir", variants:1 },
-    { name:"142 Bıçakçı", message:"142 Bıçakçı", variants:1 },
-    { name:"143 Yaman", message:"143 Yaman", variants:1 },
-    { name:"144 Bedir", message:"144 Bedir", variants:1 },
-    { name:"145 Ayaz", message:"145 Ayaz", variants:1 },
-    { name:"146 Kara", message:"146 Kara", variants:1 },
-    { name:"147 Narin", message:"147 Narin", variants:1 },
-    { name:"148 Uşun", message:"148 Uşun", variants:1 },
-    { name:"149 Taran", message:"149 Taran", variants:1 },
-    { name:"150 Gül", message:"150 Gül", variants:1 }
+{ name:"55 Dağaşan", message:"55 Dağaşan", variants:1 },
+{ name:"121 Çam", message:"121 Çam", variants:1 },
+{ name:"122 Korucuoğlu", message:"122 Korucuoğlu", variants:1 },
+{ name:"123 Avşar", message:"123 Avşar", variants:1 },
+{ name:"124 Kaya", message:"124 Kaya", variants:2 },
+{ name:"125 Mutlu", message:"125 Mutlu", variants:1 },
+{ name:"126 Güçlü", message:"126 Güçlü", variants:1 },
+{ name:"127 Zengin", message:"127 Zengin", variants:2 },
+{ name:"128 Işık", message:"128 Işık", variants:1 },
+{ name:"129 Ağlık", message:"129 Ağlık", variants:1 },
+{ name:"130 Dinçoğlu", message:"130 Dinçoğlu", variants:1 },
+{ name:"131 Camcıoğlu", message:"131 Camcıoğlu", variants:1 },
+{ name:"132 Camadan", message:"132 Camadan", variants:5 },
+{ name:"133 Moroğlu", message:"133 Moroğlu", variants:1 },
+{ name:"134 Tüfekçi", message:"134 Tüfekçi", variants:1 },
+{ name:"135 Başarır", message:"135 Başarır", variants:1 },
+{ name:"136 Karadoğan", message:"136 Karadoğan", variants:1 },
+{ name:"137 Soylu", message:"137 Soylu", variants:1 },
+{ name:"138 Esen", message:"138 Esen", variants:3 },
+{ name:"139 Aykut", message:"139 Aykut", variants:1 },
+{ name:"140 Yazıcı", message:"140 Yazıcı", variants:1 },
+{ name:"141 Demir", message:"141 Demir", variants:1 },
+{ name:"142 Bıçakçı", message:"142 Bıçakçı", variants:1 },
+{ name:"143 Yaman", message:"143 Yaman", variants:1 },
+{ name:"144 Bedir", message:"144 Bedir", variants:1 },
+{ name:"145 Ayaz", message:"145 Ayaz", variants:1 },
+{ name:"146 Kara", message:"146 Kara", variants:1 },
+{ name:"147 Narin", message:"147 Narin", variants:1 },
+{ name:"148 Uşun", message:"148 Uşun", variants:1 },
+{ name:"149 Taran", message:"149 Taran", variants:1 },
+{ name:"150 Gül", message:"150 Gül", variants:1 }
 ];
 
 const wheelImage = new Image();
@@ -295,7 +316,7 @@ function showPopup(obj) {
 }
 
 function playStudentSound(nameObj) {
-  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+  if (resultSound) { resultSound.pause(); resultSound.currentTime = 0; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
 
   const baseName = nameObj.name;
@@ -304,28 +325,29 @@ function playStudentSound(nameObj) {
     ? `./sounds/${baseName}${crypto.getRandomValues(new Uint32Array(1))[0] % variants + 1}.mp3`
     : `./sounds/${baseName}.mp3`;
 
-  currentAudio.src = fileToPlay;
-  
-  currentAudio.onerror = () => {
-    currentAudio.src = './sounds/Default.mp3';
-    currentAudio.play().catch(()=>{});
+  resultSound.src = fileToPlay;
+  resultSound.onerror = () => {
+    resultSound.src = './sounds/Default.mp3';
+    resultSound.play().catch(()=>{});
   };
-  
-  currentAudio.onended = () => popup.style.display = 'none';
-  currentAudio.play().catch((e)=> console.log("Audio play failed:", e));
+  resultSound.onended = () => popup.style.display = 'none';
+  resultSound.play().catch((e)=>console.log("Result sound play failed:", e));
 
   soundTimeout = setTimeout(() => {
-    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; popup.style.display = 'none'; }
+    if (resultSound) { resultSound.pause(); resultSound.currentTime = 0; popup.style.display = 'none'; }
   }, musicDuration * 1000);
 }
 
-wheelContainer.addEventListener('pointerdown', (e) => {
-  // Call unlock in case the browser didn't catch the window-level events
+// CHANGED TO 'click' for better mobile activation
+wheelContainer.addEventListener('click', (e) => {
+  if (isSpinning) return;
+  
+  // Safety unlock
   unlockAudio();
 
-  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+  if (resultSound) { resultSound.pause(); resultSound.currentTime = 0; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
-  if (isSpinning) return;
+  
   isSpinning = true;
 
   const randomArr = new Uint32Array(1);
@@ -348,10 +370,9 @@ wheelContainer.addEventListener('pointerdown', (e) => {
   if (spinSoundVariants > 1)
     spinFile = `./sounds/Spin${crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1}.mp3`;
 
-  // Reuse the existing spinSound object
   spinSound.src = spinFile;
   spinSound.loop = true;
-  spinSound.play().catch((e)=> console.log("Spin sound failed:", e));
+  spinSound.play().catch((e)=>console.log("Spin sound play failed:", e));
 
   function animate(now) {
     const elapsed = (now - startTime) / 1000;
@@ -374,7 +395,7 @@ wheelContainer.addEventListener('pointerdown', (e) => {
 
 function closePopup() {
   popup.style.display = 'none';
-  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+  if (resultSound) { resultSound.pause(); resultSound.currentTime = 0; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
 }
 
@@ -425,13 +446,7 @@ function drawWheel(angleDeg) {
   ctx.restore();
 }
 
-async function validateAssets() {
-  // ... (Your existing validateAssets code remains the same)
-}
-
-validateAssets();
 drawWheel(rotation);
 </script>
 </body>
 </html>
-
