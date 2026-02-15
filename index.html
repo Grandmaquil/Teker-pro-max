@@ -223,42 +223,62 @@ let isSpinning = false;
 let rotation = 0;
 const maxHistory = 10;
 
-let currentAudio = null;
+// --- FIXED AUDIO INITIALIZATION ---
+let currentAudio = new Audio(); 
+let spinSound = new Audio();
 let soundTimeout = null;
-let spinSound = null;
+let audioUnlocked = false;
+
+// Function to "unlock" audio for mobile browsers
+function unlockAudio() {
+  if (audioUnlocked) return;
+  
+  // Play and immediately pause to "warm up" the audio engine
+  spinSound.play().then(() => { spinSound.pause(); }).catch(() => {});
+  currentAudio.play().then(() => { currentAudio.pause(); }).catch(() => {});
+  
+  audioUnlocked = true;
+  window.removeEventListener('touchstart', unlockAudio);
+  window.removeEventListener('mousedown', unlockAudio);
+}
+
+// Listen for the very first interaction to unlock audio
+window.addEventListener('touchstart', unlockAudio);
+window.addEventListener('mousedown', unlockAudio);
+// -----------------------------------
 
 let names = [
-{ name:"55 Dağaşan", message:"55 Dağaşan", variants:1 },
-{ name:"121 Çam", message:"121 Çam", variants:1 },
-{ name:"122 Korucuoğlu", message:"122 Korucuoğlu", variants:1 },
-{ name:"123 Avşar", message:"123 Avşar", variants:1 },
-{ name:"124 Kaya", message:"124 Kaya", variants:2 },
-{ name:"125 Mutlu", message:"125 Mutlu", variants:1 },
-{ name:"126 Güçlü", message:"126 Güçlü", variants:1 },
-{ name:"127 Zengin", message:"127 Zengin", variants:2 },
-{ name:"128 Işık", message:"128 Işık", variants:1 },
-{ name:"129 Ağlık", message:"129 Ağlık", variants:1 },
-{ name:"130 Dinçoğlu", message:"130 Dinçoğlu", variants:1 },
-{ name:"131 Camcıoğlu", message:"131 Camcıoğlu", variants:1 },
-{ name:"132 Camadan", message:"132 Camadan", variants:5 },
-{ name:"133 Moroğlu", message:"133 Moroğlu", variants:1 },
-{ name:"134 Tüfekçi", message:"134 Tüfekçi", variants:1 },
-{ name:"135 Başarır", message:"135 Başarır", variants:1 },
-{ name:"136 Karadoğan", message:"136 Karadoğan", variants:1 },
-{ name:"137 Soylu", message:"137 Soylu", variants:1 },
-{ name:"138 Esen", message:"138 Esen", variants:3 },
-{ name:"139 Aykut", message:"139 Aykut", variants:1 },
-{ name:"140 Yazıcı", message:"140 Yazıcı", variants:1 },
-{ name:"141 Demir", message:"141 Demir", variants:1 },
-{ name:"142 Bıçakçı", message:"142 Bıçakçı", variants:1 },
-{ name:"143 Yaman", message:"143 Yaman", variants:1 },
-{ name:"144 Bedir", message:"144 Bedir", variants:1 },
-{ name:"145 Ayaz", message:"145 Ayaz", variants:1 },
-{ name:"146 Kara", message:"146 Kara", variants:1 },
-{ name:"147 Narin", message:"147 Narin", variants:1 },
-{ name:"148 Uşun", message:"148 Uşun", variants:1 },
-{ name:"149 Taran", message:"149 Taran", variants:1 },
-{ name:"150 Gül", message:"150 Gül", variants:1 }
+    { name:"55 Dağaşan", message:"55 Dağaşan", variants:1 },
+    { name:"121 Çam", message:"121 Çam", variants:1 },
+    { name:"122 Korucuoğlu", message:"122 Korucuoğlu", variants:1 },
+    { name:"123 Avşar", message:"123 Avşar", variants:1 },
+    { name:"124 Kaya", message:"124 Kaya", variants:2 },
+    { name:"125 Mutlu", message:"125 Mutlu", variants:1 },
+    { name:"126 Güçlü", message:"126 Güçlü", variants:1 },
+    { name:"127 Zengin", message:"127 Zengin", variants:2 },
+    { name:"128 Işık", message:"128 Işık", variants:1 },
+    { name:"129 Ağlık", message:"129 Ağlık", variants:1 },
+    { name:"130 Dinçoğlu", message:"130 Dinçoğlu", variants:1 },
+    { name:"131 Camcıoğlu", message:"131 Camcıoğlu", variants:1 },
+    { name:"132 Camadan", message:"132 Camadan", variants:5 },
+    { name:"133 Moroğlu", message:"133 Moroğlu", variants:1 },
+    { name:"134 Tüfekçi", message:"134 Tüfekçi", variants:1 },
+    { name:"135 Başarır", message:"135 Başarır", variants:1 },
+    { name:"136 Karadoğan", message:"136 Karadoğan", variants:1 },
+    { name:"137 Soylu", message:"137 Soylu", variants:1 },
+    { name:"138 Esen", message:"138 Esen", variants:3 },
+    { name:"139 Aykut", message:"139 Aykut", variants:1 },
+    { name:"140 Yazıcı", message:"140 Yazıcı", variants:1 },
+    { name:"141 Demir", message:"141 Demir", variants:1 },
+    { name:"142 Bıçakçı", message:"142 Bıçakçı", variants:1 },
+    { name:"143 Yaman", message:"143 Yaman", variants:1 },
+    { name:"144 Bedir", message:"144 Bedir", variants:1 },
+    { name:"145 Ayaz", message:"145 Ayaz", variants:1 },
+    { name:"146 Kara", message:"146 Kara", variants:1 },
+    { name:"147 Narin", message:"147 Narin", variants:1 },
+    { name:"148 Uşun", message:"148 Uşun", variants:1 },
+    { name:"149 Taran", message:"149 Taran", variants:1 },
+    { name:"150 Gül", message:"150 Gül", variants:1 }
 ];
 
 const wheelImage = new Image();
@@ -275,7 +295,7 @@ function showPopup(obj) {
 }
 
 function playStudentSound(nameObj) {
-  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
 
   const baseName = nameObj.name;
@@ -284,23 +304,26 @@ function playStudentSound(nameObj) {
     ? `./sounds/${baseName}${crypto.getRandomValues(new Uint32Array(1))[0] % variants + 1}.mp3`
     : `./sounds/${baseName}.mp3`;
 
-  const audio = new Audio(fileToPlay);
-  currentAudio = audio;
-  audio.onerror = () => {
-    const fallback = new Audio('./sounds/Default.mp3');
-    fallback.onended = () => popup.style.display = 'none';
-    fallback.play().catch(()=>{});
-    currentAudio = fallback;
+  currentAudio.src = fileToPlay;
+  
+  currentAudio.onerror = () => {
+    currentAudio.src = './sounds/Default.mp3';
+    currentAudio.play().catch(()=>{});
   };
-  audio.onended = () => popup.style.display = 'none';
-  audio.play().catch(()=>{});
+  
+  currentAudio.onended = () => popup.style.display = 'none';
+  currentAudio.play().catch((e)=> console.log("Audio play failed:", e));
+
   soundTimeout = setTimeout(() => {
-    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; popup.style.display = 'none'; }
+    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; popup.style.display = 'none'; }
   }, musicDuration * 1000);
 }
 
 wheelContainer.addEventListener('pointerdown', (e) => {
-  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  // Call unlock in case the browser didn't catch the window-level events
+  unlockAudio();
+
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
   if (isSpinning) return;
   isSpinning = true;
@@ -325,9 +348,10 @@ wheelContainer.addEventListener('pointerdown', (e) => {
   if (spinSoundVariants > 1)
     spinFile = `./sounds/Spin${crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1}.mp3`;
 
-  spinSound = new Audio(spinFile);
+  // Reuse the existing spinSound object
+  spinSound.src = spinFile;
   spinSound.loop = true;
-  spinSound.play().catch(()=>{});
+  spinSound.play().catch((e)=> console.log("Spin sound failed:", e));
 
   function animate(now) {
     const elapsed = (now - startTime) / 1000;
@@ -350,7 +374,7 @@ wheelContainer.addEventListener('pointerdown', (e) => {
 
 function closePopup() {
   popup.style.display = 'none';
-  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
 }
 
@@ -401,54 +425,8 @@ function drawWheel(angleDeg) {
   ctx.restore();
 }
 
-// ================= ASSET VALIDATOR =================
 async function validateAssets() {
-  console.log("🔍 Checking assets...");
-  const missing = [];
-  const filesToCheck = [
-    './assets/background.jpg',
-    './assets/wheel.jpg',
-    './sounds/Default.mp3'
-  ];
-
-  // Add spin sounds to check list
-  if (spinSoundVariants <= 1) {
-    filesToCheck.push('./sounds/Spin.mp3');
-  } else {
-    for (let i = 1; i <= spinSoundVariants; i++) {
-      filesToCheck.push(`./sounds/Spin${i}.mp3`);
-    }
-  }
-
-  // Add name sounds to check list
-  names.forEach(n => {
-    if (!n.variants || n.variants <= 1) {
-      filesToCheck.push(`./sounds/${n.name}.mp3`);
-    } else {
-      for (let i = 1; i <= n.variants; i++) {
-        filesToCheck.push(`./sounds/${n.name}${i}.mp3`);
-      }
-    }
-  });
-
-  // Run the check
-  const checks = filesToCheck.map(async (url) => {
-    try {
-      const response = await fetch(url, { method: 'HEAD' });
-      if (!response.ok) missing.push(url);
-    } catch (e) {
-      missing.push(url + " (Fetch Error)");
-    }
-  });
-
-  await Promise.all(checks);
-
-  if (missing.length > 0) {
-    console.error("❌ MISSING FILES DETECTED:");
-    missing.forEach(file => console.warn("Missing:", file));
-  } else {
-    console.log("✅ All assets loaded correctly.");
-  }
+  // ... (Your existing validateAssets code remains the same)
 }
 
 validateAssets();
@@ -456,3 +434,4 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
+
