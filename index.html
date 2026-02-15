@@ -225,8 +225,8 @@ const maxHistory = 10;
 
 let currentAudio = null;
 let soundTimeout = null;
-let spinSound = null;
-let audioUnlocked = false; // Flag to check if mobile audio is ready
+let spinSound = new Audio(); // Persistent object
+let audioInitialized = false;
 
 let names = [
 { name:"55 Dağaşan", message:"55 Dağaşan", variants:1 },
@@ -266,17 +266,17 @@ const wheelImage = new Image();
 wheelImage.src = './assets/wheel.jpg';
 wheelImage.onload = () => drawWheel(rotation);
 
-// Function to unlock audio context on mobile
-function unlockAudio() {
-    if (audioUnlocked) return;
-    
-    // Create a tiny silent buffer and play it to "wake up" the audio engine
-    const silentAudio = new Audio();
-    silentAudio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA== ";
-    silentAudio.play().then(() => {
-        audioUnlocked = true;
-        console.log("Audio Unlocked for Mobile");
-    }).catch(e => console.log("Audio waiting for interaction"));
+// Fix for Mobile: Unlock audio context on first interaction
+function initAudioOnFirstClick() {
+  if (audioInitialized) return;
+  
+  // Play and immediately pause a silent segment or the spin sound
+  spinSound.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA== "; // Silent stub
+  spinSound.play().then(() => {
+    spinSound.pause();
+    audioInitialized = true;
+    console.log("Audio Unlocked");
+  }).catch(e => console.log("Audio Init Wait:", e));
 }
 
 function showPopup(obj) {
@@ -307,15 +307,21 @@ function playStudentSound(nameObj) {
     currentAudio = fallback;
   };
   audio.onended = () => popup.style.display = 'none';
-  audio.play().catch(()=>{});
+  audio.play().catch((e)=> console.error("Sound play blocked:", e));
+  
   soundTimeout = setTimeout(() => {
-    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; popup.style.display = 'none'; }
+    if (currentAudio) { 
+      currentAudio.pause(); 
+      currentAudio.currentTime = 0; 
+      currentAudio = null; 
+      popup.style.display = 'none'; 
+    }
   }, musicDuration * 1000);
 }
 
 wheelContainer.addEventListener('pointerdown', (e) => {
-  // Mobile fix: Unlock audio context on the very first touch
-  unlockAudio();
+  // Prime audio for mobile on first click
+  initAudioOnFirstClick();
 
   if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
@@ -342,16 +348,16 @@ wheelContainer.addEventListener('pointerdown', (e) => {
   if (spinSoundVariants > 1)
     spinFile = `./sounds/Spin${crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1}.mp3`;
 
-  // Pre-instantiate and play immediately for mobile response
-  spinSound = new Audio(spinFile);
+  // Set up the persistent spin sound
+  spinSound.src = spinFile;
   spinSound.loop = true;
   
-  // High-priority play call
+  // Play with a catch for mobile restrictions
   const playPromise = spinSound.play();
   if (playPromise !== undefined) {
-      playPromise.catch(error => {
-          console.log("Audio play failed, retrying on next frame...");
-      });
+    playPromise.catch(error => {
+      console.log("Waiting for interaction to play sound...");
+    });
   }
 
   function animate(now) {
@@ -360,14 +366,13 @@ wheelContainer.addEventListener('pointerdown', (e) => {
     const ease = 1 - Math.pow(1 - progress, 5);
     rotation = startRot + (endRot - startRot) * ease;
     drawWheel(rotation);
-    if (progress < 1) { requestAnimationFrame(animate); } 
-    else {
+    if (progress < 1) { 
+        requestAnimationFrame(animate); 
+    } else {
       rotation = endRot;
       drawWheel(rotation);
-      if (spinSound) {
-          spinSound.pause();
-          spinSound.currentTime = 0;
-      }
+      spinSound.pause();
+      spinSound.currentTime = 0;
       isSpinning = false;
       showPopup(selectedObj);
       playStudentSound(selectedObj);
