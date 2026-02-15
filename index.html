@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8" />
@@ -13,179 +13,160 @@
   --glass-border: rgba(255, 255, 255, 0.3);
   --text-dark: #2f3542;
 }
-
 html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: #1a1a1a; 
-  background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('./assets/background.jpg') no-repeat center center fixed;
-  background-size: cover;
-  color: white;
+margin: 0;
+padding: 0;
+height: 100%;
+overflow: hidden;
+font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+background: #1a1a1a;
+background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('./assets/background.jpg') no-repeat center center fixed;
+background-size: cover;
+color: white;
 }
-
 #container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 80px;
-  padding: 20px;
+display: flex;
+align-items: center;
+justify-content: center;
+height: 100vh;
+gap: 80px;
+padding: 20px;
 }
-
 #wheel-outer-ring {
-  position: relative;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 50%;
-  box-shadow: 0 0 50px rgba(0,0,0,0.5);
-  border: 4px solid var(--glass-border);
+position: relative;
+padding: 15px;
+background: rgba(255, 255, 255, 0.05);
+border-radius: 50%;
+box-shadow: 0 0 50px rgba(0,0,0,0.5);
+border: 4px solid var(--glass-border);
 }
-
 #wheel-container {
-  position: relative;
-  width: 600px;
-  height: 600px;
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: none; 
+position: relative;
+width: 600px;
+height: 600px;
+cursor: pointer;
+user-select: none;
+-webkit-user-select: none;
+-webkit-tap-highlight-color: transparent;
+touch-action: none;
 }
-
 canvas {
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: transparent;
-  z-index: 1;
-  pointer-events: none;
-  transform: translateZ(0);
+width: 600px;
+height: 600px;
+border-radius: 50%;
+background: transparent;
+z-index: 1;
+pointer-events: none;
+transform: translateZ(0);
 }
-
 #pointer {
-  position: absolute;
-  top: 50%;
-  right: -20px;
-  transform: translateY(-50%);
-  width: 60px;
-  height: 40px;
-  z-index: 10;
-  filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.8));
+position: absolute;
+top: 50%;
+right: -20px;
+transform: translateY(-50%);
+width: 60px;
+height: 40px;
+z-index: 10;
+filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.8));
 }
-
 #pointer::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  border-top: 20px solid transparent;
-  border-bottom: 20px solid transparent;
-  border-right: 40px solid var(--accent);
+content: '';
+position: absolute;
+right: 0;
+border-top: 20px solid transparent;
+border-bottom: 20px solid transparent;
+border-right: 40px solid var(--accent);
 }
-
 #history {
-  background: var(--glass);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  padding: 30px;
-  border-radius: 24px;
-  width: 320px;
-  height: 600px;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--glass-border);
+background: var(--glass);
+backdrop-filter: blur(15px);
+-webkit-backdrop-filter: blur(15px);
+padding: 30px;
+border-radius: 24px;
+width: 320px;
+height: 600px;
+display: flex;
+flex-direction: column;
+border: 1px solid var(--glass-border);
 }
-
-#history h3 { 
-  margin: 0 0 20px 0; 
-  text-align: center; 
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 1.1rem;
-  border-bottom: 1px solid var(--glass-border);
-  padding-bottom: 15px;
+#history h3 {
+margin: 0 0 20px 0;
+text-align: center;
+font-weight: 600;
+text-transform: uppercase;
+font-size: 1.1rem;
+border-bottom: 1px solid var(--glass-border);
+padding-bottom: 15px;
 }
-
 #history-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  overflow-y: auto;
-  flex-grow: 1;
+list-style: none;
+padding: 0;
+margin: 0;
+overflow-y: auto;
+flex-grow: 1;
 }
-
 #history-list li {
-  background: rgba(255,255,255,0.1);
-  margin-bottom: 8px;
-  padding: 10px 15px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  border-left: 4px solid var(--primary);
-  animation: slideIn 0.3s ease-out;
+background: rgba(255,255,255,0.1);
+margin-bottom: 8px;
+padding: 10px 15px;
+border-radius: 10px;
+font-size: 0.9rem;
+border-left: 4px solid var(--primary);
+animation: slideIn 0.3s ease-out;
 }
-
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(10px); }
-  to { opacity: 1; transform: translateX(0); }
+from { opacity: 0; transform: translateX(10px); }
+to { opacity: 1; transform: translateX(0); }
 }
-
 #popup {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(5px);
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
+display: none;
+position: fixed;
+top: 0; left: 0;
+width: 100%; height: 100%;
+background: rgba(0, 0, 0, 0.85);
+backdrop-filter: blur(5px);
+justify-content: center;
+align-items: center;
+z-index: 999;
 }
-
 #popup-content {
-  background: white;
-  color: var(--text-dark);
-  padding: 50px 80px;
-  border-radius: 30px;
-  font-size: 36px;
-  font-weight: 800;
-  text-align: center;
-  max-width: 85%;
-  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+background: white;
+color: var(--text-dark);
+padding: 50px 80px;
+border-radius: 30px;
+font-size: 36px;
+font-weight: 800;
+text-align: center;
+max-width: 85%;
+animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
-
 @keyframes popIn {
-  0% { transform: scale(0.5); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+0% { transform: scale(0.5); opacity: 0; }
+100% { transform: scale(1); opacity: 1; }
 }
-
 #popup-content button {
-  margin-top: 30px;
-  padding: 15px 50px;
-  font-size: 18px;
-  font-weight: bold;
-  border-radius: 50px;
-  border: none;
-  cursor: pointer;
-  background: #4CAF50;
-  color: white;
-  transition: transform 0.2s;
+margin-top: 30px;
+padding: 15px 50px;
+font-size: 18px;
+font-weight: bold;
+border-radius: 50px;
+border: none;
+cursor: pointer;
+background: #4CAF50;
+color: white;
+transition: transform 0.2s;
 }
-
 @media (orientation: portrait), (max-width: 1000px) {
-  html, body { overflow-y: auto; height: auto; }
-  #container { flex-direction: column; height: auto; padding: 40px 10px; gap: 30px; }
-  #wheel-container, canvas { width: 88vw; height: 88vw; }
-  #wheel-outer-ring { padding: 5px; }
-  #history { width: 88vw; height: 300px; padding: 20px; }
-  #pointer { right: -12px; width: 45px; }
+html, body { overflow-y: auto; height: auto; }
+#container { flex-direction: column; height: auto; padding: 40px 10px; gap: 30px; }
+#wheel-container, canvas { width: 88vw; height: 88vw; }
+#wheel-outer-ring { padding: 5px; }
+#history { width: 88vw; height: 300px; padding: 20px; }
+#pointer { right: -12px; width: 45px; }
 }
 </style>
 </head>
-
 <body>
-
 <div id="container">
   <div id="wheel-outer-ring">
     <div id="wheel-container">
@@ -193,13 +174,11 @@ canvas {
       <div id="pointer"></div>
     </div>
   </div>
-
   <div id="history">
     <h3>Son Seçilenler</h3>
     <ul id="history-list"></ul>
   </div>
 </div>
-
 <div id="popup">
   <div id="popup-content">
     <div style="font-size: 16px; color: #777; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 2px;">Seçilen</div>
@@ -207,7 +186,6 @@ canvas {
     <button onclick="closePopup()">TAMAM</button>
   </div>
 </div>
-
 <script>
 const canvas = document.getElementById('wheelCanvas');
 const wheelContainer = document.getElementById('wheel-container');
@@ -225,8 +203,13 @@ const maxHistory = 10;
 
 let currentAudio = null;
 let soundTimeout = null;
-let spinSound = new Audio(); // Persistent object
-let audioInitialized = false;
+
+// Persistent audio objects for better mobile performance
+let spinSound = new Audio();
+let audioUnlocked = false;
+
+// A short silent base64 MP3 to "warm up" the audio context
+const silentSrc = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
 
 let names = [
 { name:"55 Dağaşan", message:"55 Dağaşan", variants:1 },
@@ -266,19 +249,6 @@ const wheelImage = new Image();
 wheelImage.src = './assets/wheel.jpg';
 wheelImage.onload = () => drawWheel(rotation);
 
-// Fix for Mobile: Unlock audio context on first interaction
-function initAudioOnFirstClick() {
-  if (audioInitialized) return;
-  
-  // Play and immediately pause a silent segment or the spin sound
-  spinSound.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA== "; // Silent stub
-  spinSound.play().then(() => {
-    spinSound.pause();
-    audioInitialized = true;
-    console.log("Audio Unlocked");
-  }).catch(e => console.log("Audio Init Wait:", e));
-}
-
 function showPopup(obj) {
   popupText.textContent = obj.message;
   popup.style.display = 'flex';
@@ -307,24 +277,24 @@ function playStudentSound(nameObj) {
     currentAudio = fallback;
   };
   audio.onended = () => popup.style.display = 'none';
-  audio.play().catch((e)=> console.error("Sound play blocked:", e));
+  audio.play().catch(()=>{});
   
   soundTimeout = setTimeout(() => {
-    if (currentAudio) { 
-      currentAudio.pause(); 
-      currentAudio.currentTime = 0; 
-      currentAudio = null; 
-      popup.style.display = 'none'; 
-    }
+    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; popup.style.display = 'none'; }
   }, musicDuration * 1000);
 }
 
-wheelContainer.addEventListener('pointerdown', (e) => {
-  // Prime audio for mobile on first click
-  initAudioOnFirstClick();
+wheelContainer.addEventListener('pointerdown', async (e) => {
+  // Mobile Audio Unlock: Play silence if not unlocked yet
+  if (!audioUnlocked) {
+    spinSound.src = silentSrc;
+    await spinSound.play().catch(()=>{});
+    audioUnlocked = true;
+  }
 
   if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
+  
   if (isSpinning) return;
   isSpinning = true;
 
@@ -348,17 +318,10 @@ wheelContainer.addEventListener('pointerdown', (e) => {
   if (spinSoundVariants > 1)
     spinFile = `./sounds/Spin${crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1}.mp3`;
 
-  // Set up the persistent spin sound
+  // Start the actual spin sound
   spinSound.src = spinFile;
   spinSound.loop = true;
-  
-  // Play with a catch for mobile restrictions
-  const playPromise = spinSound.play();
-  if (playPromise !== undefined) {
-    playPromise.catch(error => {
-      console.log("Waiting for interaction to play sound...");
-    });
-  }
+  spinSound.play().catch(()=>{});
 
   function animate(now) {
     const elapsed = (now - startTime) / 1000;
@@ -366,13 +329,11 @@ wheelContainer.addEventListener('pointerdown', (e) => {
     const ease = 1 - Math.pow(1 - progress, 5);
     rotation = startRot + (endRot - startRot) * ease;
     drawWheel(rotation);
-    if (progress < 1) { 
-        requestAnimationFrame(animate); 
-    } else {
+    if (progress < 1) { requestAnimationFrame(animate); } 
+    else {
       rotation = endRot;
       drawWheel(rotation);
       spinSound.pause();
-      spinSound.currentTime = 0;
       isSpinning = false;
       showPopup(selectedObj);
       playStudentSound(selectedObj);
@@ -434,54 +395,6 @@ function drawWheel(angleDeg) {
   ctx.restore();
 }
 
-// ================= ASSET VALIDATOR =================
-async function validateAssets() {
-  console.log("🔍 Checking assets...");
-  const missing = [];
-  const filesToCheck = [
-    './assets/background.jpg',
-    './assets/wheel.jpg',
-    './sounds/Default.mp3'
-  ];
-
-  if (spinSoundVariants <= 1) {
-    filesToCheck.push('./sounds/Spin.mp3');
-  } else {
-    for (let i = 1; i <= spinSoundVariants; i++) {
-      filesToCheck.push(`./sounds/Spin${i}.mp3`);
-    }
-  }
-
-  names.forEach(n => {
-    if (!n.variants || n.variants <= 1) {
-      filesToCheck.push(`./sounds/${n.name}.mp3`);
-    } else {
-      for (let i = 1; i <= n.variants; i++) {
-        filesToCheck.push(`./sounds/${n.name}${i}.mp3`);
-      }
-    }
-  });
-
-  const checks = filesToCheck.map(async (url) => {
-    try {
-      const response = await fetch(url, { method: 'HEAD' });
-      if (!response.ok) missing.push(url);
-    } catch (e) {
-      missing.push(url + " (Fetch Error)");
-    }
-  });
-
-  await Promise.all(checks);
-
-  if (missing.length > 0) {
-    console.error("❌ MISSING FILES DETECTED:");
-    missing.forEach(file => console.warn("Missing:", file));
-  } else {
-    console.log("✅ All assets loaded correctly.");
-  }
-}
-
-validateAssets();
 drawWheel(rotation);
 </script>
 </body>
