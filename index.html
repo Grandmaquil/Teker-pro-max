@@ -202,9 +202,9 @@ let isSpinning = false;
 let rotation = 0;
 const maxHistory = 10;
 
-// Persistent audio objects
+// Persistent Audio Objects
 let spinSound = new Audio();
-let resultAudio = new Audio();
+let currentAudio = new Audio();
 let soundTimeout = null;
 let isAudioUnlocked = false;
 
@@ -264,67 +264,65 @@ function playStudentSound(nameObj) {
     ? `./sounds/${baseName}${crypto.getRandomValues(new Uint32Array(1))[0] % variants + 1}.mp3`
     : `./sounds/${baseName}.mp3`;
 
-  resultAudio.src = fileToPlay;
-  resultAudio.onended = () => popup.style.display = 'none';
-  resultAudio.onerror = () => {
-    resultAudio.src = './sounds/Default.mp3';
-    resultAudio.play().catch(()=>{});
+  currentAudio.src = fileToPlay;
+  currentAudio.volume = 1.0;
+  currentAudio.onended = () => popup.style.display = 'none';
+  currentAudio.onerror = () => {
+    currentAudio.src = './sounds/Default.mp3';
+    currentAudio.play().catch(()=>{});
   };
-  resultAudio.play().catch(()=>{});
+  currentAudio.play().catch(()=>{});
 
   soundTimeout = setTimeout(() => {
-    if (!resultAudio.paused) { 
-        resultAudio.pause(); 
-        resultAudio.currentTime = 0; 
+    if (!currentAudio.paused) { 
+        currentAudio.pause(); 
+        currentAudio.currentTime = 0; 
         popup.style.display = 'none'; 
     }
   }, musicDuration * 1000);
 }
 
-// THE FIX: Immediate User Activation
 wheelContainer.addEventListener('pointerdown', (e) => {
   if (isSpinning) return;
-
-  // 1. FORCED UNLOCK: Play a random spin sound for 1ms immediately on touch
-  // This satisfies the browser's "User Activation" requirement perfectly
+  
+  // ================= THE KICKSTART FIX =================
   if (!isAudioUnlocked) {
-      const unlockFile = `./sounds/Spin${Math.floor(Math.random() * spinSoundVariants) + 1}.mp3`;
-      spinSound.src = unlockFile;
-      spinSound.volume = 0.001; // Nearly silent but active
-      spinSound.play().then(() => {
-          // Immediately reset for the actual spin
-          spinSound.pause();
-          spinSound.volume = 1.0;
+      // 1. Force play Spin1.mp3 at 1% volume immediately
+      spinSound.src = './sounds/Spin1.mp3';
+      spinSound.volume = 0.01;
+      spinSound.play().catch(err => console.log("Kickstart blocked", err));
+
+      // 2. Wait 500ms for the engine to stabilize, then start the real spin
+      setTimeout(() => {
           isAudioUnlocked = true;
-          startSpinLogic();
-      }).catch(() => {
-          // Fallback if even that fails
-          startSpinLogic();
-      });
+          startRealSpin();
+      }, 500);
   } else {
-      startSpinLogic();
+      startRealSpin();
   }
+  // =====================================================
 
-  function startSpinLogic() {
+  function startRealSpin() {
+      if (!currentAudio.paused) { currentAudio.pause(); currentAudio.currentTime = 0; }
       if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
-      if (!resultAudio.paused) { resultAudio.pause(); resultAudio.currentTime = 0; }
-
+      
       isSpinning = true;
 
-      // Select random spin file
+      // Choose actual spin sound
       let spinFile = 'sounds/Spin.mp3';
       if (spinSoundVariants > 1) {
-        const rand = crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1;
-        spinFile = `./sounds/Spin${rand}.mp3`;
+          const rand = crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1;
+          spinFile = `./sounds/Spin${rand}.mp3`;
       }
 
-      // Start looping spin sound
+      // Reset volume to 100% and play loop
       spinSound.src = spinFile;
+      spinSound.volume = 1.0;
       spinSound.loop = true;
       spinSound.currentTime = 0;
-      spinSound.play().catch(err => console.log("Audio play blocked", err));
+      spinSound.play().catch(err => console.log("Loop play blocked", err));
 
-      // Calculations
+      // Calculation logic
       const randomArr = new Uint32Array(1);
       crypto.getRandomValues(randomArr);
       const selectedIndex = randomArr[0] % names.length;
@@ -364,7 +362,7 @@ wheelContainer.addEventListener('pointerdown', (e) => {
 
 function closePopup() {
   popup.style.display = 'none';
-  if (!resultAudio.paused) { resultAudio.pause(); resultAudio.currentTime = 0; }
+  if (!currentAudio.paused) { currentAudio.pause(); currentAudio.currentTime = 0; }
 }
 
 function drawWheel(angleDeg) {
