@@ -52,6 +52,7 @@ html, body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: none; 
 }
 
 canvas {
@@ -125,27 +126,6 @@ canvas {
   animation: slideIn 0.3s ease-out;
 }
 
-/* Mobile Audio Unlock Overlay */
-#audio-unlocker {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  z-index: 10000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  text-align: center;
-}
-#audio-unlocker p {
-    background: var(--primary);
-    padding: 20px 40px;
-    border-radius: 50px;
-    font-weight: bold;
-    font-size: 1.2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(10px); }
   to { opacity: 1; transform: translateX(0); }
@@ -206,10 +186,6 @@ canvas {
 
 <body>
 
-<div id="audio-unlocker">
-    <p>BAŞLATMAK İÇİN DOKUNUN</p>
-</div>
-
 <div id="container">
   <div id="wheel-outer-ring">
     <div id="wheel-container">
@@ -239,7 +215,6 @@ const ctx = canvas.getContext('2d');
 const popup = document.getElementById('popup');
 const popupText = document.getElementById('popup-text');
 const historyList = document.getElementById('history-list');
-const audioUnlocker = document.getElementById('audio-unlocker');
 
 let spinDuration = 10;
 let musicDuration = 10;
@@ -248,25 +223,10 @@ let isSpinning = false;
 let rotation = 0;
 const maxHistory = 10;
 
-// PRE-CREATE AUDIO OBJECTS (This is key for mobile)
-let spinSound = new Audio();
-let resultSound = new Audio();
+let currentAudio = null;
 let soundTimeout = null;
-let audioUnlocked = false;
-
-// Function to unlock audio context on first tap
-function unlockAudio() {
-    if (audioUnlocked) return;
-    
-    // Play/Pause both sounds immediately to "bless" them
-    spinSound.play().then(() => spinSound.pause()).catch(e => console.log(e));
-    resultSound.play().then(() => resultSound.pause()).catch(e => console.log(e));
-    
-    audioUnlocked = true;
-    audioUnlocker.style.display = 'none';
-}
-
-audioUnlocker.addEventListener('click', unlockAudio);
+let spinSound = null;
+let audioUnlocked = false; // Flag to check if mobile audio is ready
 
 let names = [
 { name:"55 Dağaşan", message:"55 Dağaşan", variants:1 },
@@ -306,6 +266,19 @@ const wheelImage = new Image();
 wheelImage.src = './assets/wheel.jpg';
 wheelImage.onload = () => drawWheel(rotation);
 
+// Function to unlock audio context on mobile
+function unlockAudio() {
+    if (audioUnlocked) return;
+    
+    // Create a tiny silent buffer and play it to "wake up" the audio engine
+    const silentAudio = new Audio();
+    silentAudio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA== ";
+    silentAudio.play().then(() => {
+        audioUnlocked = true;
+        console.log("Audio Unlocked for Mobile");
+    }).catch(e => console.log("Audio waiting for interaction"));
+}
+
 function showPopup(obj) {
   popupText.textContent = obj.message;
   popup.style.display = 'flex';
@@ -316,7 +289,7 @@ function showPopup(obj) {
 }
 
 function playStudentSound(nameObj) {
-  if (resultSound) { resultSound.pause(); resultSound.currentTime = 0; }
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
 
   const baseName = nameObj.name;
@@ -325,29 +298,28 @@ function playStudentSound(nameObj) {
     ? `./sounds/${baseName}${crypto.getRandomValues(new Uint32Array(1))[0] % variants + 1}.mp3`
     : `./sounds/${baseName}.mp3`;
 
-  resultSound.src = fileToPlay;
-  resultSound.onerror = () => {
-    resultSound.src = './sounds/Default.mp3';
-    resultSound.play().catch(()=>{});
+  const audio = new Audio(fileToPlay);
+  currentAudio = audio;
+  audio.onerror = () => {
+    const fallback = new Audio('./sounds/Default.mp3');
+    fallback.onended = () => popup.style.display = 'none';
+    fallback.play().catch(()=>{});
+    currentAudio = fallback;
   };
-  resultSound.onended = () => popup.style.display = 'none';
-  resultSound.play().catch((e)=>console.log("Result sound play failed:", e));
-
+  audio.onended = () => popup.style.display = 'none';
+  audio.play().catch(()=>{});
   soundTimeout = setTimeout(() => {
-    if (resultSound) { resultSound.pause(); resultSound.currentTime = 0; popup.style.display = 'none'; }
+    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; popup.style.display = 'none'; }
   }, musicDuration * 1000);
 }
 
-// CHANGED TO 'click' for better mobile activation
-wheelContainer.addEventListener('click', (e) => {
-  if (isSpinning) return;
-  
-  // Safety unlock
+wheelContainer.addEventListener('pointerdown', (e) => {
+  // Mobile fix: Unlock audio context on the very first touch
   unlockAudio();
 
-  if (resultSound) { resultSound.pause(); resultSound.currentTime = 0; }
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
-  
+  if (isSpinning) return;
   isSpinning = true;
 
   const randomArr = new Uint32Array(1);
@@ -370,9 +342,17 @@ wheelContainer.addEventListener('click', (e) => {
   if (spinSoundVariants > 1)
     spinFile = `./sounds/Spin${crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1}.mp3`;
 
-  spinSound.src = spinFile;
+  // Pre-instantiate and play immediately for mobile response
+  spinSound = new Audio(spinFile);
   spinSound.loop = true;
-  spinSound.play().catch((e)=>console.log("Spin sound play failed:", e));
+  
+  // High-priority play call
+  const playPromise = spinSound.play();
+  if (playPromise !== undefined) {
+      playPromise.catch(error => {
+          console.log("Audio play failed, retrying on next frame...");
+      });
+  }
 
   function animate(now) {
     const elapsed = (now - startTime) / 1000;
@@ -384,7 +364,10 @@ wheelContainer.addEventListener('click', (e) => {
     else {
       rotation = endRot;
       drawWheel(rotation);
-      spinSound.pause();
+      if (spinSound) {
+          spinSound.pause();
+          spinSound.currentTime = 0;
+      }
       isSpinning = false;
       showPopup(selectedObj);
       playStudentSound(selectedObj);
@@ -395,7 +378,7 @@ wheelContainer.addEventListener('click', (e) => {
 
 function closePopup() {
   popup.style.display = 'none';
-  if (resultSound) { resultSound.pause(); resultSound.currentTime = 0; }
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
 }
 
@@ -446,6 +429,54 @@ function drawWheel(angleDeg) {
   ctx.restore();
 }
 
+// ================= ASSET VALIDATOR =================
+async function validateAssets() {
+  console.log("🔍 Checking assets...");
+  const missing = [];
+  const filesToCheck = [
+    './assets/background.jpg',
+    './assets/wheel.jpg',
+    './sounds/Default.mp3'
+  ];
+
+  if (spinSoundVariants <= 1) {
+    filesToCheck.push('./sounds/Spin.mp3');
+  } else {
+    for (let i = 1; i <= spinSoundVariants; i++) {
+      filesToCheck.push(`./sounds/Spin${i}.mp3`);
+    }
+  }
+
+  names.forEach(n => {
+    if (!n.variants || n.variants <= 1) {
+      filesToCheck.push(`./sounds/${n.name}.mp3`);
+    } else {
+      for (let i = 1; i <= n.variants; i++) {
+        filesToCheck.push(`./sounds/${n.name}${i}.mp3`);
+      }
+    }
+  });
+
+  const checks = filesToCheck.map(async (url) => {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      if (!response.ok) missing.push(url);
+    } catch (e) {
+      missing.push(url + " (Fetch Error)");
+    }
+  });
+
+  await Promise.all(checks);
+
+  if (missing.length > 0) {
+    console.error("❌ MISSING FILES DETECTED:");
+    missing.forEach(file => console.warn("Missing:", file));
+  } else {
+    console.log("✅ All assets loaded correctly.");
+  }
+}
+
+validateAssets();
 drawWheel(rotation);
 </script>
 </body>
