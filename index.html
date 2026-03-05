@@ -1,510 +1,835 @@
 <!DOCTYPE html> 
+
 <html lang="tr"> 
+
 <head> 
+
 <meta charset="UTF-8" /> 
+
 <title>Teker Pro Max</title> 
+
 <link rel="icon" href="favicon.ico" type="image/x-icon"/> 
+
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/> 
+
 <style> 
+
 :root { 
+
   --primary: #4CAF50; 
+
   --accent: #ff4757; 
+
   --glass: rgba(255, 255, 255, 0.15); 
+
   --glass-border: rgba(255, 255, 255, 0.3); 
+
   --text-dark: #2f3542; 
+
 } 
+
 html, body { 
+
   margin: 0; 
+
   padding: 0; 
+
   height: 100%; 
+
   overflow: hidden; 
+
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+
   background: #1a1a1a; 
+
   background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('./assets/background.jpg') no-repeat center center fixed; 
+
   background-size: cover; 
+
   color: white; 
+
 } 
+
 #container { 
+
   display: flex; 
+
   align-items: center; 
+
   justify-content: center; 
+
   height: 100vh; 
+
   gap: 80px; 
+
   padding: 20px; 
+
 } 
+
 #wheel-outer-ring { 
+
   position: relative; 
+
   padding: 15px; 
+
   background: rgba(255, 255, 255, 0.05); 
+
   border-radius: 50%; 
+
   box-shadow: 0 0 50px rgba(0,0,0,0.5); 
+
   border: 4px solid var(--glass-border); 
+
 } 
+
 #wheel-container { 
+
   position: relative; 
+
   width: 600px; 
+
   height: 600px; 
+
   cursor: pointer; 
+
   user-select: none; 
+
   -webkit-user-select: none; 
+
   -webkit-tap-highlight-color: transparent; 
+
   touch-action: none; 
+
 } 
+
 canvas { 
+
   width: 600px; 
+
   height: 600px; 
+
   border-radius: 50%; 
+
   background: transparent; 
+
   z-index: 1; 
+
   pointer-events: none; 
+
   transform: translateZ(0); 
+
 } 
+
 #pointer { 
+
   position: absolute; 
+
   top: 50%; 
+
   right: -20px; 
+
   transform: translateY(-50%); 
+
   width: 60px; 
+
   height: 40px; 
+
   z-index: 10; 
+
   filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.8)); 
+
 } 
+
 #pointer::after { 
+
   content: ''; 
+
   position: absolute; 
+
   right: 0; 
+
   border-top: 20px solid transparent; 
+
   border-bottom: 20px solid transparent; 
+
   border-right: 40px solid var(--accent); 
+
 } 
+
 #history { 
+
   background: var(--glass); 
+
   backdrop-filter: blur(15px); 
+
   -webkit-backdrop-filter: blur(15px); 
+
   padding: 30px; 
+
   border-radius: 24px; 
+
   width: 320px; 
+
   height: 600px; 
+
   display: flex; 
+
   flex-direction: column; 
+
   border: 1px solid var(--glass-border); 
+
 } 
+
 #history h3 { 
+
   margin: 0 0 20px 0; 
+
   text-align: center; 
+
   font-weight: 600; 
+
   text-transform: uppercase; 
+
   font-size: 1.1rem; 
+
   border-bottom: 1px solid var(--glass-border); 
+
   padding-bottom: 15px; 
+
 } 
+
 #history-list { 
+
   list-style: none; 
+
   padding: 0; 
+
   margin: 0; 
+
   overflow-y: auto; 
+
   flex-grow: 1; 
+
 } 
+
 #history-list li { 
+
   background: rgba(255,255,255,0.1); 
+
   margin-bottom: 8px; 
+
   padding: 10px 15px; 
+
   border-radius: 10px; 
+
   font-size: 0.9rem; 
+
   border-left: 4px solid var(--primary); 
+
   animation: slideIn 0.3s ease-out; 
+
 } 
-#history-list li.absent { 
-  border-left-color: var(--accent); 
-  opacity: 0.6; 
-  text-decoration: line-through; 
-} 
+
 @keyframes slideIn { 
+
   from { opacity: 0; transform: translateX(10px); } 
+
   to { opacity: 1; transform: translateX(0); } 
+
 } 
+
 #popup { 
+
   display: none; 
+
   position: fixed; 
+
   top: 0; left: 0; 
+
   width: 100%; height: 100%; 
+
   background: rgba(0, 0, 0, 0.85); 
+
   backdrop-filter: blur(5px); 
+
   justify-content: center; 
+
   align-items: center; 
+
   z-index: 999; 
+
 } 
+
 #popup-content { 
+
   background: white; 
+
   color: var(--text-dark); 
+
   padding: 50px 80px; 
+
   border-radius: 30px; 
+
   font-size: 36px; 
+
   font-weight: 800; 
+
   text-align: center; 
+
   max-width: 85%; 
+
   animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
+
 } 
+
 @keyframes popIn { 
+
   0% { transform: scale(0.5); opacity: 0; } 
+
   100% { transform: scale(1); opacity: 1; } 
+
 } 
+
 #popup-content button { 
+
   margin-top: 30px; 
+
   padding: 15px 50px; 
+
   font-size: 18px; 
+
   font-weight: bold; 
+
   border-radius: 50px; 
+
   border: none; 
+
   cursor: pointer; 
+
   background: #4CAF50; 
+
   color: white; 
+
   transition: transform 0.2s; 
+
 } 
-#popup-content button:hover { 
-  transform: scale(1.05); 
-} 
-#btn-absent { 
-  background: var(--accent) !important; 
-  margin-left: 15px; 
-} 
-#popup-buttons { 
-  display: flex; 
-  justify-content: center; 
-  flex-wrap: wrap; 
-  gap: 10px; 
-  margin-top: 30px; 
-} 
-#popup-buttons button { 
-  margin-top: 0 !important; 
-} 
+
 @media (orientation: portrait), (max-width: 1000px) { 
+
   html, body { overflow-y: auto; height: auto; } 
+
   #container { flex-direction: column; height: auto; padding: 40px 10px; gap: 30px; } 
+
   #wheel-container, canvas { width: 88vw; height: 88vw; } 
+
   #wheel-outer-ring { padding: 5px; } 
+
+  #history { width: 88vw; height: 300px; padding: 20px; } 
+
   #pointer { right: -12px; width: 45px; } 
+
 } 
+
 </style> 
+
 </head> 
+
 <body> 
+
 <div id="container"> 
+
   <div id="wheel-outer-ring"> 
+
     <div id="wheel-container"> 
+
       <canvas id="wheelCanvas" width="600" height="600"></canvas> 
+
       <div id="pointer"></div> 
+
     </div> 
+
   </div> 
+
   <div id="history"> 
+
     <h3>Son Seçilenler</h3> 
+
     <ul id="history-list"></ul> 
+
   </div> 
+
 </div> 
+
 <div id="popup"> 
+
   <div id="popup-content"> 
+
     <div style="font-size: 16px; color: #777; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 2px;">Seçilen</div> 
+
     <div id="popup-text">İSİM</div> 
-    <div id="popup-buttons">
-      <button onclick="closePopup()">TAMAM</button>
-      <button id="btn-absent" onclick="handleAbsent()">Aramızda değil</button>
-    </div>
+
+    <button onclick="closePopup()">TAMAM</button> 
+
   </div> 
+
 </div> 
+
  
+
 <script> 
+
 const canvas = document.getElementById('wheelCanvas'); 
+
 const wheelContainer = document.getElementById('wheel-container'); 
+
 const ctx = canvas.getContext('2d'); 
+
 const popup = document.getElementById('popup'); 
+
 const popupText = document.getElementById('popup-text'); 
+
 const historyList = document.getElementById('history-list'); 
+
  
+
 let spinDuration = 10; 
+
 let musicDuration = 10; 
+
 let spinSoundVariants = 44; 
+
 let isSpinning = false; 
+
 let rotation = 0; 
+
 const maxHistory = 10; 
 
-// Absent / re-spin tracking
-// Each consecutive "Aramızda değil" press halves the spin duration.
-// Resets to base when a normal spin completes (TAMAM pressed or sound ends).
-let consecutiveAbsentCount = 0;
-let currentSelectedIndex = -1; // index into the *active* names array
+ 
 
 // Persistent Audio Objects 
+
 let spinSound = new Audio(); 
+
 let currentAudio = new Audio(); 
+
 let soundTimeout = null; 
+
 let isAudioUnlocked = false; 
+
  
-// Full names list — we keep this intact and work from activeNames for the session
-const allNames = [ 
+
+let names = [ 
+
 { name:"55 Dağaşan", message:"55 Dağaşan", variants:1 }, 
+
 { name:"121 Çam", message:"121 Çam", variants:1 }, 
+
 { name:"122 Korucuoğlu", message:"122 Korucuoğlu", variants:1 }, 
+
 { name:"123 Avşar", message:"123 Avşar", variants:1 }, 
+
 { name:"124 Kaya", message:"124 Kaya", variants:2 }, 
+
 { name:"125 Mutlu", message:"125 Mutlu", variants:1 }, 
+
 { name:"126 Güçlü", message:"126 Güçlü", variants:1 }, 
+
 { name:"127 Zengin", message:"127 Zengin", variants:2 }, 
+
 { name:"128 Işık", message:"128 Işık", variants:1 }, 
+
 { name:"129 Ağlık", message:"129 Ağlık", variants:1 }, 
+
 { name:"130 Dinçoğlu", message:"130 Dinçoğlu", variants:1 }, 
+
 { name:"131 Camcıoğlu", message:"131 Camcıoğlu", variants:1 }, 
+
 { name:"132 Camadan", message:"132 Camadan", variants:5 }, 
+
 { name:"133 Moroğlu", message:"133 Moroğlu", variants:1 }, 
+
 { name:"134 Tüfekçi", message:"134 Tüfekçi", variants:1 }, 
+
 { name:"135 Başarır", message:"135 Başarır", variants:1 }, 
+
 { name:"136 Karadoğan", message:"136 Karadoğan", variants:1 }, 
+
 { name:"137 Soylu", message:"137 Soylu", variants:1 }, 
+
 { name:"138 Esen", message:"138 Esen", variants:3 }, 
+
 { name:"139 Aykut", message:"139 Aykut", variants:1 }, 
+
 { name:"140 Yazıcı", message:"140 Yazıcı", variants:1 }, 
+
 { name:"141 Demir", message:"141 Demir", variants:1 }, 
+
 { name:"142 Bıçakçı", message:"142 Bıçakçı", variants:1 }, 
+
 { name:"143 Yaman", message:"143 Yaman", variants:1 }, 
+
 { name:"144 Bedir", message:"144 Bedir", variants:1 }, 
+
 { name:"145 Ayaz", message:"145 Ayaz", variants:1 }, 
+
 { name:"146 Kara", message:"146 Kara", variants:1 }, 
+
 { name:"147 Narin", message:"147 Narin", variants:1 }, 
+
 { name:"148 Uşun", message:"148 Uşun", variants:1 }, 
+
 { name:"149 Taran", message:"149 Taran", variants:1 }, 
+
 { name:"150 Gül", message:"150 Gül", variants:1 } 
+
 ]; 
 
-// Active names for this session (absent people get removed)
-let names = [...allNames];
-
-// ─── Cryptographically random integer in [0, n) ───────────────────────────
-function cryptoRandInt(n) {
-  // Rejection-sampling to eliminate modulo bias
-  const max = Math.floor(0x100000000 / n) * n;
-  let r;
-  do {
-    r = crypto.getRandomValues(new Uint32Array(1))[0];
-  } while (r >= max);
-  return r % n;
-}
  
+
 const wheelImage = new Image(); 
+
 wheelImage.src = './assets/wheel.jpg'; 
+
 wheelImage.onload = () => drawWheel(rotation); 
+
  
+
 function showPopup(obj) { 
+
   popupText.textContent = obj.message; 
+
   popup.style.display = 'flex'; 
+
   const li = document.createElement('li'); 
+
   li.textContent = obj.name; 
+
   historyList.prepend(li); 
+
   while (historyList.children.length > maxHistory) historyList.removeChild(historyList.lastChild); 
+
 } 
+
  
+
 function playStudentSound(nameObj) { 
+
   if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; } 
+
  
+
   const baseName = nameObj.name; 
+
   const variants = nameObj.variants || 1; 
+
   let fileToPlay = variants > 1 
-    ? `./sounds/${baseName}${cryptoRandInt(variants) + 1}.mp3` 
+
+    ? `./sounds/${baseName}${crypto.getRandomValues(new Uint32Array(1))[0] % variants + 1}.mp3` 
+
     : `./sounds/${baseName}.mp3`; 
+
  
+
   currentAudio.src = fileToPlay; 
+
   currentAudio.volume = 1.0; 
-  currentAudio.onended = () => { popup.style.display = 'none'; consecutiveAbsentCount = 0; }; 
+
+  currentAudio.onended = () => popup.style.display = 'none'; 
+
   currentAudio.onerror = () => { 
+
     currentAudio.src = './sounds/Default.mp3'; 
+
     currentAudio.play().catch(()=>{}); 
+
   }; 
+
   currentAudio.play().catch(()=>{}); 
+
  
+
   soundTimeout = setTimeout(() => { 
+
     if (!currentAudio.paused) {  
+
         currentAudio.pause();  
+
         currentAudio.currentTime = 0;  
-        popup.style.display = 'none';
-        consecutiveAbsentCount = 0;
+
+        popup.style.display = 'none';  
+
     } 
+
   }, musicDuration * 1000); 
-}
 
-// ─── Absent handler ────────────────────────────────────────────────────────
-function handleAbsent() {
-  if (isSpinning) return;
-  if (names.length === 0) return;
+} 
 
-  // Stop current music
-  if (!currentAudio.paused) { currentAudio.pause(); currentAudio.currentTime = 0; }
-  if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
-
-  // Mark history entry as absent
-  const firstItem = historyList.querySelector('li:first-child');
-  if (firstItem) firstItem.classList.add('absent');
-
-  // Remove absent person from active list for this session
-  if (currentSelectedIndex >= 0 && currentSelectedIndex < names.length) {
-    names.splice(currentSelectedIndex, 1);
-    drawWheel(rotation); // redraw without the removed segment
-  }
-  currentSelectedIndex = -1;
-
-  // Close popup and increment consecutive counter
-  popup.style.display = 'none';
-  consecutiveAbsentCount++;
-
-  // Calculate this spin's duration — halved each consecutive absent press, min 1s
-  const absentSpinDuration = Math.max(1, spinDuration / Math.pow(2, consecutiveAbsentCount));
-
-  // Slightly speed up the spin sound (max 1.4x so it still sounds OK)
-  // Each consecutive press adds a small increment, capped at 1.4
-  const playbackRate = Math.min(1.4, 1.0 + consecutiveAbsentCount * 0.08);
-
-  if (names.length > 0) {
-    startSpin(absentSpinDuration, playbackRate);
-  }
-}
-
-// ─── Core spin logic (extracted so it can be called from both handlers) ───
-function startSpin(duration, spinSoundRate) {
-  if (!currentAudio.paused) { currentAudio.pause(); currentAudio.currentTime = 0; }
-  if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; }
-  
-  isSpinning = true;
-
-  // Choose spin sound
-  let spinFile = 'sounds/Spin.mp3'; 
-  if (spinSoundVariants > 1) { 
-    const rand = cryptoRandInt(spinSoundVariants) + 1;
-    spinFile = `./sounds/Spin${rand}.mp3`; 
-  } 
-
-  spinSound.src = spinFile; 
-  spinSound.volume = 1.0; 
-  spinSound.playbackRate = spinSoundRate || 1.0;
-  spinSound.loop = true; 
-  spinSound.currentTime = 0; 
-  spinSound.play().catch(err => console.log("Loop play blocked", err)); 
-
-  // Pick winner from active names
-  const selectedIndex = cryptoRandInt(names.length);
-  const selectedObj = names[selectedIndex];
-  currentSelectedIndex = selectedIndex;
-
-  // Use 5-9 spins for normal, 3-5 for absent respins (faster feel)
-  const minSpins = duration < spinDuration ? 3 : 7;
-  const extraSpins = cryptoRandInt(3); // 0, 1, or 2
-  const spins = minSpins + extraSpins;
-
-  const anglePerSegmentDeg = 360 / names.length; 
-  const centerAngleDeg = (selectedIndex + 0.5) * anglePerSegmentDeg; 
-  const currentRotMod = ((rotation % 360) + 360) % 360; 
-  const needed = (360 - ((centerAngleDeg + currentRotMod) % 360)) % 360; 
-  const totalRotation = spins * 360 + needed; 
-
-  const startRot = rotation; 
-  const endRot = startRot + totalRotation; 
-  const startTime = performance.now(); 
-
-  function animate(now) { 
-    const elapsed = (now - startTime) / 1000; 
-    const progress = Math.min(elapsed / duration, 1); 
-    const ease = 1 - Math.pow(1 - progress, 5); 
-    rotation = startRot + (endRot - startRot) * ease; 
-    drawWheel(rotation); 
-    if (progress < 1) {  
-      requestAnimationFrame(animate);  
-    } else { 
-      rotation = endRot; 
-      drawWheel(rotation); 
-      spinSound.pause();
-      spinSound.playbackRate = 1.0; // reset for next normal spin
-      isSpinning = false; 
-      showPopup(selectedObj); 
-      playStudentSound(selectedObj); 
-    } 
-  } 
-  requestAnimationFrame(animate); 
-}
  
+
 wheelContainer.addEventListener('pointerdown', (e) => { 
-  if (isSpinning) return; 
-   
-  // ================= THE KICKSTART FIX ================= 
-  if (!isAudioUnlocked) { 
-    // 1. Force play Spin1.mp3 at 1% volume immediately 
-    spinSound.src = './sounds/Spin1.mp3'; 
-    spinSound.volume = 0.01; 
-    spinSound.play().catch(err => console.log("Kickstart blocked", err)); 
 
-    // 2. Wait 500ms for the engine to stabilize, then start the real spin 
-    setTimeout(() => { 
-      isAudioUnlocked = true;
-      // Reset absent counter on a fresh manual spin
-      consecutiveAbsentCount = 0;
-      startSpin(spinDuration, 1.0); 
-    }, 500); 
+  if (isSpinning) return; 
+
+   
+
+  // ================= THE KICKSTART FIX ================= 
+
+  if (!isAudioUnlocked) { 
+
+      // 1. Force play Spin1.mp3 at 1% volume immediately 
+
+      spinSound.src = './sounds/Spin1.mp3'; 
+
+      spinSound.volume = 0.01; 
+
+      spinSound.play().catch(err => console.log("Kickstart blocked", err)); 
+
+ 
+
+      // 2. Wait 500ms for the engine to stabilize, then start the real spin 
+
+      setTimeout(() => { 
+
+          isAudioUnlocked = true; 
+
+          startRealSpin(); 
+
+      }, 500); 
+
   } else { 
-    // Reset absent counter on a fresh manual spin
-    consecutiveAbsentCount = 0;
-    startSpin(spinDuration, 1.0); 
+
+      startRealSpin(); 
+
   } 
+
   // ===================================================== 
+
+ 
+
+  function startRealSpin() { 
+
+      if (!currentAudio.paused) { currentAudio.pause(); currentAudio.currentTime = 0; } 
+
+      if (soundTimeout) { clearTimeout(soundTimeout); soundTimeout = null; } 
+
+       
+
+      isSpinning = true; 
+
+ 
+
+      // Choose actual spin sound 
+
+      let spinFile = 'sounds/Spin.mp3'; 
+
+      if (spinSoundVariants > 1) { 
+
+          const rand = crypto.getRandomValues(new Uint32Array(1))[0] % spinSoundVariants + 1; 
+
+          spinFile = `./sounds/Spin${rand}.mp3`; 
+
+      } 
+
+ 
+
+      // Reset volume to 100% and play loop 
+
+      spinSound.src = spinFile; 
+
+      spinSound.volume = 1.0; 
+
+      spinSound.loop = true; 
+
+      spinSound.currentTime = 0; 
+
+      spinSound.play().catch(err => console.log("Loop play blocked", err)); 
+
+ 
+
+      // Calculation logic 
+
+      const randomArr = new Uint32Array(1); 
+
+      crypto.getRandomValues(randomArr); 
+
+      const selectedIndex = randomArr[0] % names.length; 
+
+      const selectedObj = names[selectedIndex]; 
+
+ 
+
+      const spins = Math.floor(Math.random() * 3) + 7;  
+
+      const anglePerSegmentDeg = 360 / names.length; 
+
+      const centerAngleDeg = (selectedIndex + 0.5) * anglePerSegmentDeg; 
+
+      const currentRotMod = ((rotation % 360) + 360) % 360; 
+
+      const needed = (360 - ((centerAngleDeg + currentRotMod) % 360)) % 360; 
+
+      const totalRotation = spins * 360 + needed; 
+
+ 
+
+      const startRot = rotation; 
+
+      const endRot = startRot + totalRotation; 
+
+      const startTime = performance.now(); 
+
+ 
+
+      function animate(now) { 
+
+        const elapsed = (now - startTime) / 1000; 
+
+        const progress = Math.min(elapsed / spinDuration, 1); 
+
+        const ease = 1 - Math.pow(1 - progress, 5); 
+
+        rotation = startRot + (endRot - startRot) * ease; 
+
+        drawWheel(rotation); 
+
+        if (progress < 1) {  
+
+            requestAnimationFrame(animate);  
+
+        } else { 
+
+          rotation = endRot; 
+
+          drawWheel(rotation); 
+
+          spinSound.pause(); 
+
+          isSpinning = false; 
+
+          showPopup(selectedObj); 
+
+          playStudentSound(selectedObj); 
+
+        } 
+
+      } 
+
+      requestAnimationFrame(animate); 
+
+  } 
+
 }); 
+
  
+
 function closePopup() { 
+
   popup.style.display = 'none'; 
-  if (!currentAudio.paused) { currentAudio.pause(); currentAudio.currentTime = 0; }
-  consecutiveAbsentCount = 0;
+
+  if (!currentAudio.paused) { currentAudio.pause(); currentAudio.currentTime = 0; } 
+
 } 
+
  
+
 function drawWheel(angleDeg) { 
+
   const w = canvas.width, h = canvas.height; 
+
   const cx = w/2, cy = h/2; 
+
   const radius = Math.min(cx, cy); 
+
   ctx.clearRect(0, 0, w, h); 
+
   ctx.save(); 
+
   ctx.translate(cx, cy); 
+
   ctx.rotate(angleDeg * Math.PI / 180); 
+
   ctx.translate(-cx, -cy); 
+
  
+
   if (wheelImage.complete && wheelImage.naturalWidth !== 0) 
+
     ctx.drawImage(wheelImage, 0, 0, w, h); 
+
  
+
   const segmentAngle = (2 * Math.PI) / names.length; 
+
   ctx.strokeStyle = 'rgba(255,255,255,0.7)'; 
+
   ctx.lineWidth = 2; 
+
   for (let i = 0; i < names.length; i++) { 
+
     const start = i * segmentAngle; 
+
     ctx.beginPath(); 
+
     ctx.moveTo(cx, cy); 
+
     ctx.lineTo(cx + radius * Math.cos(start), cy + radius * Math.sin(start)); 
+
     ctx.stroke(); 
+
   } 
+
   for (let i = 0; i < names.length; i++) { 
+
     const start = i * segmentAngle; 
+
     const textAngle = start + segmentAngle / 2; 
+
     const textRadius = radius - 80; 
+
     const tx = cx + textRadius * Math.cos(textAngle); 
+
     const ty = cy + textRadius * Math.sin(textAngle); 
+
     ctx.save(); 
+
     ctx.translate(tx, ty); 
+
     ctx.rotate(textAngle); 
-    const arcLen = Math.max(20, Math.min(textRadius * segmentAngle, textRadius * (2 * Math.PI / 31)));
-    const fontSize = Math.max(12, Math.min(48, arcLen * 0.45));
-    ctx.font = `700 ${Math.round(fontSize)}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+
+    const arcLen = Math.max(20, textRadius * segmentAngle); 
+
+    const fontSize = Math.max(12, Math.min(48, arcLen * 0.45)); 
+
+    ctx.font = `700 ${Math.round(fontSize)}px sans-serif`; 
+
+    ctx.textAlign = 'center'; 
+
+    ctx.textBaseline = 'middle'; 
+
     ctx.lineWidth = 3; 
+
     ctx.strokeStyle = 'rgba(0,0,0,0.8)'; 
+
     ctx.fillStyle = '#ffffff'; 
+
     ctx.strokeText(names[i].name, 0, 0); 
+
     ctx.fillText(names[i].name, 0, 0); 
+
     ctx.restore(); 
+
   } 
+
   ctx.restore(); 
+
 } 
+
  
+
 drawWheel(rotation); 
+
 </script> 
+
 </body> 
+
 </html>
